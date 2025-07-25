@@ -1,0 +1,39 @@
+#targetRevision: "develop"
+#certArn: "arn:aws:acm:eu-central-1:917848404243:certificate/3880296f-c351-4efb-8ef7-a83463eb6bfb"
+#wildcardCertArn: "arn:aws:acm:eu-central-1:917848404243:certificate/eee8450e-7acc-4aa0-b07a-96524ef6a8ce"
+#wazuhDomain: "dev.wazuh.adorsys.team"
+#environment: "dev"
+
+applications:
+  - name: wazuh
+    namespace: "argocd"
+    project: applications
+    source:
+      repoURL: https://github.com/ADORSYS-GIS/wazuh-eksa.git
+      targetRevision: {{ .Values.targetRevision }}
+      path: "charts/wazuh"
+      helm:
+        valueFiles:
+          - values.yaml
+          - values-eksa.yaml
+    destination:
+      server: https://kubernetes.default.svc
+      namespace: "wazuh"
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+  - name: wazuh-secrets
+    namespace: argocd
+    project: infrastructure
+    source:
+      repoURL: https://github.com/ADORSYS-GIS/wazuh-eksa.git
+      targetRevision: {{ .Values.targetRevision }}
+      path: "deploy/wazuh"
+    destination:
+      server: https://kubernetes.default.svc
+      namespace: "wazuh"
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true

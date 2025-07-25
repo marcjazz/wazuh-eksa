@@ -1,0 +1,429 @@
+# -- Deploy Argo CD Applications within this helm release
+# @default -- `[]` (See [values.yaml])
+## Ref: https://github.com/argoproj/argo-cd/blob/master/docs/operator-manual/
+
+#applications:
+#  - name: argo-apps
+#    namespace: argocd
+#    additionalLabels: { }
+#    additionalAnnotations: { }
+#    finalizers:
+#      - resources-finalizer.argocd.argoproj.io
+#    project: infrastructure
+#    source:
+#      repoURL: https://github.com/ADORSYS-GIS/wazuh.git
+#      targetRevision: {{ .Values.targetRevision }}
+#      path: "charts/argocd-apps"
+#      helm:
+#        valueFiles:
+#          - values.yaml
+#        valuesObject:
+#          targetRevision: {{ .Values.targetRevision }}
+#    destination:
+#      server: https://kubernetes.default.svc
+#      namespace: "argocd"
+#    syncPolicy:
+#      automated:
+#        prune: true
+#        selfHeal: true
+#  - name: wazuh
+#    namespace: "argocd"
+#    additionalLabels: { }
+#    additionalAnnotations: { }
+#    finalizers:
+#      - resources-finalizer.argocd.argoproj.io
+#    project: applications
+#    source:
+#      repoURL: https://github.com/ADORSYS-GIS/wazuh.git
+#      targetRevision: {{ .Values.targetRevision }}
+#      path: "charts/wazuh"
+#      helm:
+#        valueFiles:
+#          - values.yaml
+#          - values-efs.yaml
+#        valuesObject:
+#          global:
+#            domain: {{ .Values.wazuhDomain }}
+#            eks:
+#              domain:
+#                certArn: {{ .Values.certArn }}
+#                wildcardCertArn: {{ .Values.wildcardCertArn }}
+#          dashboard:
+#            ingress:
+#              annotations:
+#                alb.ingress.kubernetes.io/load-balancer-name: dev-lb
+#    destination:
+#      server: https://kubernetes.default.svc
+#      namespace: "wazuh"
+#    syncPolicy:
+#      automated:
+#        prune: true
+#        selfHeal: true
+#  - name: wazuh-cert-oauth2
+#    namespace: "argocd"
+#    additionalLabels: { }
+#    additionalAnnotations: { }
+#    finalizers:
+#      - resources-finalizer.argocd.argoproj.io
+#    project: applications
+#    source:
+#      repoURL: https://chartmuseum.wazuh.adorsys.team
+#      targetRevision: "0.2.4"
+#      chart: "wazuh-cert-oauth2"
+#      helm:
+#        valueFiles:
+#          - values.yaml
+#          - values-efs.yaml
+#        valuesObject:
+#          ports:
+#            - name: http
+#              containerPort: 8000
+#              protocol: TCP
+#          ingress:
+#            host: "cert.{{ .Values.wazuhDomain }}"
+#            annotations:
+#              external-dns.alpha.kubernetes.io/hostname: 'cert.{{ .Values.wazuhDomain }}'
+#              alb.ingress.kubernetes.io/load-balancer-name: cert-lb
+#              alb.ingress.kubernetes.io/certificate-arn: {{ .Values.wildcardCertArn }}
+#          volumeMounts:
+#            - name: core-certs
+#              mountPath: "/usr/share/wazuh-cert-oauth2/certs/root-ca.pem"
+#              subPath: root-ca.pem
+#              readOnly: true
+#            - name: core-certs
+#              mountPath: "/usr/share/wazuh-cert-oauth2/certs/root-ca-key.pem"
+#              subPath: root-ca-key.pem
+#              readOnly: true
+#          volumes:
+#            - name: core-certs
+#              secret:
+#                secretName: 'wazuh-core-certs'
+#    destination:
+#      server: https://kubernetes.default.svc
+#      namespace: "wazuh"
+#    syncPolicy:
+#      automated:
+#        prune: true
+#        selfHeal: true
+#  - name: owasp-zap
+#    namespace: "argocd"
+#    additionalLabels: { }
+#    additionalAnnotations: { }
+#    finalizers:
+#      - resources-finalizer.argocd.argoproj.io
+#    project: applications
+#    source:
+#      repoURL: https://chartmuseum.wazuh.adorsys.team
+#      targetRevision: "0.1.5"
+#      chart: "owasp-zap"
+#      helm:
+#        valuesObject:
+#          cronjob:
+#            failedJobsHistoryLimit: 5
+#          params:
+#            APP_URL: "https:'{{ .Values.wazuhDomain }}'"
+#          persistence:
+#            enabled: false
+#          externalPvcName: "owasp-zap-alerts"
+#    destination:
+#      server: https://kubernetes.default.svc
+#      namespace: "wazuh"
+#    syncPolicy:
+#      automated:
+#        prune: true
+#        selfHeal: true
+#  - name: snort-ips
+#    namespace: "argocd"
+#    additionalLabels: { }
+#    additionalAnnotations: { }
+#    finalizers:
+#      - resources-finalizer.argocd.argoproj.io
+#    project: applications
+#    source:
+#      repoURL: https://chartmuseum.wazuh.adorsys.team
+#      targetRevision: "0.1.0"
+#      chart: "snort-ips"
+#      helm:
+#        valuesObject:
+#          externalPvcName: "snort-alerts"
+#          persistence:
+#            enabled: false
+#    destination:
+#      server: https://kubernetes.default.svc
+#      namespace: "wazuh"
+#    syncPolicy:
+#      automated:
+#        prune: true
+#        selfHeal: true
+#  - name: cicd-tools
+#    namespace: argocd
+#    additionalLabels: { }
+#    additionalAnnotations: { }
+#    finalizers:
+#      - resources-finalizer.argocd.argoproj.io
+#    project: infrastructure
+#    source:
+#      repoURL: https://github.com/ADORSYS-GIS/wazuh.git
+#      targetRevision: {{ .Values.targetRevision }}
+#      path: "argocd-repo/{{ .Values.environment }}"
+#    destination:
+#      server: https://kubernetes.default.svc
+#      namespace: "olm"
+#    syncPolicy:
+#      automated:
+#        prune: true
+#        selfHeal: true
+
+# Ref: https://github.com/argoproj/argo-cd/blob/master/docs/operator-manual/
+projects:
+  - name: infrastructure
+    namespace: argocd
+    additionalLabels: { }
+    additionalAnnotations: { }
+    permitOnlyProjectScopedClusters: false
+    finalizers:
+      - resources-finalizer.argocd.argoproj.io
+    description: Infrastructure management tools
+    sourceRepos:
+      - "*"
+    destinations:
+      - namespace: "*"
+        server: https://kubernetes.default.svc
+    clusterResourceWhitelist:
+      - group: "*"
+        kind: "*"
+    clusterResourceBlacklist: [ ]
+    namespaceResourceBlacklist:
+      - group: ""
+        kind: ResourceQuota
+      - group: ""
+        kind: LimitRange
+      - group: ""
+        kind: NetworkPolicy
+    namespaceResourceWhitelist:
+      - group: "*"
+        kind: "*"
+    orphanedResources: { }
+    roles: [ ]
+    syncWindows:
+      - kind: allow
+        schedule: "10 1 * * *"
+        duration: 1h
+        applications:
+          - "*-infra"
+        manualSync: true
+    #signatureKeys:
+    #- keyID: B25A3EF3AAD7EAB2 # YSI GPG keys ID
+    #- keyID: ABCDEF1234567890 # Change me
+    sourceNamespaces:
+      - argocd
+  - name: applications
+    namespace: argocd
+    additionalLabels: { }
+    additionalAnnotations: { }
+    permitOnlyProjectScopedClusters: false
+    finalizers:
+      - resources-finalizer.argocd.argoproj.io
+    description: set of applications
+    sourceRepos:
+      - "*"
+    destinations:
+      - namespace: "*"
+        server: https://kubernetes.default.svc
+    clusterResourceWhitelist:
+      - group: "*"
+        kind: "*"
+    clusterResourceBlacklist: [ ]
+    namespaceResourceBlacklist:
+      - group: ""
+        kind: ResourceQuota
+      - group: ""
+        kind: LimitRange
+      - group: ""
+        kind: NetworkPolicy
+    namespaceResourceWhitelist:
+      - group: "*"
+        kind: "*"
+    orphanedResources: { }
+    roles: [ ]
+    syncWindows:
+      - kind: allow
+        schedule: "10 1 * * *"
+        duration: 1h
+        applications:
+          - "*-prod"
+        manualSync: true
+    #signatureKeys:
+    #  - keyID: B25A3EF3AAD7EAB2
+    #  - keyID: ABCDEF1234567890 # Change me
+    sourceNamespaces:
+      - argocd
+# -- Deploy Argo CD ApplicationSets within this helm release
+# @default -- `[]` (See [values.yaml])
+## Ref: https://argo-cd.readthedocs.io/en/stable/operator-manual/applicationset/
+applicationsets: [ ]
+# - name: guestbook
+#   namespace: argocd
+#   additionalLabels: {}
+#   additionalAnnotations: {}
+#   # See PR #10026 (ArgoCD v2.5 or later)
+#   # goTemplate: false
+#   generators:
+#   - git:
+#       repoURL: https://github.com/argoproj/argocd-example-apps.git
+#       revision: HEAD
+#       directories:
+#       - path: guestbook
+#       - path: kustomize-*
+#   # Ref https://argo-cd.readthedocs.io/en/stable/operator-manual/applicationset/Controlling-Resource-Modification/#allow-temporarily-toggling-auto-sync
+#   ignoreApplicationDifferences:
+#   - jsonPointers:
+#     - /spec/syncPolicy
+#   # Progressive Syncs is an experimental feature and it must be explicitly enabled
+#   # Ref: https://argo-cd.readthedocs.io/en/stable/operator-manual/applicationset/Progressive-Syncs/#enabling-progressive-syncs
+#   strategy:
+#     type: RollingSync
+#     rollingSync:
+#       steps:
+#       - matchExpressions:
+#         - key: project
+#           operator: In
+#           values:
+#           - guestbook
+#       - matchExpressions:
+#         - key: project
+#           operator: In
+#           values:
+#           - kustomize-foo
+#           - kustomize-bar
+#   template:
+#     metadata:
+#       name: '{{path.basename}}'
+#       labels:
+#         project: '{{path.basename}}'
+#       annotations: {}
+#     spec:
+#       project: default
+#       source:
+#         repoURL: https://github.com/argoproj/argocd-example-apps.git
+#         targetRevision: HEAD
+#         path: '{{path}}'
+#       destination:
+#         server: https://kubernetes.default.svc
+#         namespace: default
+#       syncPolicy:
+#         automated:
+#           prune: false
+#           selfHeal: false
+#       ignoreDifferences:
+#       - group: apps
+#         kind: Deployment
+#         jsonPointers:
+#         - /spec/replicas
+#       info:
+#       - name: url
+#         value: https://argoproj.github.io/
+#   syncPolicy:
+#     # Set Application finalizer
+#     preserveResourcesOnDeletion: false
+#   # Templating is only available on string type
+#   templatePatch: |
+#     spec:
+#       source:
+#         helm:
+#           valueFiles:
+#           {{- range $valueFile := .valueFiles }}
+#             - {{ $valueFile }}
+#           {{- end }}
+#     {{- if .autoSync }}
+#       syncPolicy:
+#         automated:
+#           prune: {{ .prune }}
+#     {{- end }}
+
+# --  Deploy Argo CD Applications/ApplicationSets/Projects within this helm release
+# @default -- `[]` (See [values.yaml])
+## Ref: https://argo-cd.readthedocs.io/en/stable/operator-manual/applicationset/
+itemTemplates: [ ]
+# - items:
+#     - name: my-appset
+#       generators: &generators
+#         - list:
+#             elements:
+#               - cluster: engineering-dev
+#                 url: https://1.2.3.4
+#               - cluster: engineering-prod
+#                 url: https://2.4.6.8
+#               - cluster: finance-preprod
+#                 url: https://9.8.7.6
+#   template:
+#     apiVersion: argoproj.io/v1alpha1
+#     kind: ApplicationSet
+#     metadata:
+#       name: "{{ .name }}"
+#     spec:
+#       generators: *generators
+#       template:
+#         metadata:
+#           name: "{{`{{cluster}}`}}-guestbook"
+#         spec:
+#           project: my-project
+#           source:
+#             repoURL: https://github.com/infra-team/cluster-deployments.git
+#             targetRevision: HEAD
+#             path: guestbook/{{`{{cluster}}`}}
+#           destination:
+#             server: "{{`{{cluster}}`}}"
+#             namespace: guestbook
+# - items:
+#     - name: my-appset
+#       generators:
+#         - list:
+#             elements:
+#               - cluster: engineering-dev
+#                 url: https://1.2.3.4
+#               - cluster: engineering-prod
+#                 url: https://2.4.6.8
+#               - cluster: finance-preprod
+#                 url: https://9.8.7.6
+#   template: |-
+#     apiVersion: argoproj.io/v1alpha1
+#     kind: ApplicationSet
+#     metadata:
+#       name: {{ .name }}
+#     spec:
+#       generators: {{ toYaml .generators | nindent 4 }}
+#       template:
+#         metadata:
+#           name: '{{`{{cluster}}`}}-guestbook'
+#         spec:
+#           project: my-project
+#           source:
+#             repoURL: https://github.com/infra-team/cluster-deployments.git
+#             targetRevision: HEAD
+#             path: guestbook/{{`{{cluster}}`}}
+#           destination:
+#             server: '{{`{{cluster}}`}}'
+#             namespace: guestbook
+
+argocdconfigs:
+  secretmap:
+    private-helm-repo-remote:
+      type: repository
+      data:
+        url: "https://chartmuseum.wazuh.adorsys.team"
+        name: private-repo-helm
+        type: helm
+    bitnami-helm-repo:
+      type: repository
+      data:
+        url: "https://charts.bitnami.com/bitnami"
+        name: bitnami
+        type: helm
+    private-helm-repo-remote-creds:
+      type: repo-creds
+      data:
+        url: "https://chartmuseum.wazuh.adorsys.team"
+        type: helm
+        username: jB4mXCp70Pbq9VpY
+        password: XN9pqd9wonLcqX46
