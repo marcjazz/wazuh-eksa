@@ -1,0 +1,67 @@
+---
+- name: Configure VM and Create EKS-A Cluster
+  hosts: eksa_vms
+  become: true
+
+  vars:
+    cluster_name: "wazuh-eksa-cluster"
+    cluster_config_path: "/home/{{ ansible_user }}/{{ cluster_name }}.yaml"
+
+  tasks:
+    - name: "Install dependencies"
+      ansible.builtin.apt:
+        name:
+          - docker.io
+          - curl
+        state: present
+        update_cache: true
+
+    - name: "Add user to docker group"
+      ansible.builtin.user:
+        name: ubuntu
+        groups: docker
+        append: true
+
+    - name: "Install eksctl"
+      ansible.builtin.get_url:
+        url: "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_Linux_amd64.tar.gz"
+        dest: /tmp/eksctl.tar.gz
+        mode: '0644'
+
+    - name: "Unarchive eksctl"
+      ansible.builtin.unarchive:
+        src: /tmp/eksctl.tar.gz
+        dest: /usr/local/bin
+        remote_src: true
+        extra_opts: [--no-same-owner]
+        creates: /usr/local/bin/eksctl
+
+    - name: "Install eksctl-anywhere"
+      ansible.builtin.get_url:
+        url: "https://anywhere-assets.eks.amazonaws.com/releases/eks-a/19/0.11.1/eks-a-v0.11.1-linux-amd64.tar.gz"
+        dest: /tmp/eks-a.tar.gz
+        mode: '0644'
+
+    - name: "Unarchive eksctl-anywhere"
+      ansible.builtin.unarchive:
+        src: /tmp/eks-a.tar.gz
+        dest: /usr/local/bin
+        remote_src: true
+        extra_opts: [--no-same-owner]
+        creates: /usr/local/bin/eksctl-anywhere
+
+    - name: "Generate EKS-A cluster configuration file"
+      ansible.builtin.template:
+        src: templates/cluster-config.yaml.j2
+        dest: "{{ cluster_config_path }}"
+        mode: '0644'
+
+    - name: "Create EKS-A cluster"
+      ansible.builtin.command:
+        cmd: "eksctl anywhere create cluster -f {{ cluster_config_path }}"
+      register: create_cluster_result
+      changed_when: "'cluster created' in create_cluster_result.stdout | lower"
+
+    - name: "Display cluster creation result"
+      ansible.builtin.debug:
+        var: create_cluster_result.stdout_lines
