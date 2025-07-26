@@ -62,6 +62,19 @@
       register: create_cluster_result
       changed_when: "'cluster created' in create_cluster_result.stdout | lower"
 
+    - name: "Create .kube directory"
+      ansible.builtin.file:
+        path: "/home/{{ ansible_user }}/.kube"
+        state: directory
+        mode: '0755'
+
+    - name: "Copy kubeconfig"
+      ansible.builtin.copy:
+        src: "/home/{{ ansible_user }}/{{ cluster_name }}/generated/{{ cluster_name }}-eks-a-cluster.kubeconfig"
+        dest: "/home/{{ ansible_user }}/.kube/config"
+        remote_src: true
+        mode: '0600'
+
     - name: "Display cluster creation result"
       ansible.builtin.debug:
         var: create_cluster_result.stdout_lines
