@@ -9,13 +9,10 @@ applications:
     namespace: "argocd"
     project: applications
     source:
-      repoURL: https://github.com/ADORSYS-GIS/wazuh-eksa.git
-      targetRevision: {{ .Values.targetRevision }}
-      path: "charts/wazuh"
-      helm:
-        valueFiles:
-          - values.yaml
-          - values-eksa.yaml
+      repoURL: https://chartmuseum.wazuh.adorsys.team
+      targetRevision: "0.2.25"
+      chart: "wazuh-helm"
+      helm: {}
     destination:
       server: https://kubernetes.default.svc
       namespace: "wazuh"
@@ -28,8 +25,8 @@ applications:
     project: infrastructure
     source:
       repoURL: https://github.com/ADORSYS-GIS/wazuh-eksa.git
-      targetRevision: {{ .Values.targetRevision }}
-      path: "deploy/wazuh"
+      targetRevision: "master"
+      path: "apps/wazuh"
     destination:
       server: https://kubernetes.default.svc
       namespace: "wazuh"

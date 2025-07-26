@@ -1,22 +1,22 @@
-# terraform-eks-a: Minimal Docker/Dev-Only Terraform Configuration
- 
-This directory contains a minimal Terraform configuration for local (Docker-based) Kubernetes development.
- 
-- **No AWS-specific modules, resources, or settings are present.**
-- Uses the local backend for state.
-- The Kubernetes and Helm providers are configured.
-- Installs ArgoCD with default and local-dev values.
- 
+# Terraform Configuration for EKS-A
+
+This Terraform configuration is used to deploy applications to the EKS-A cluster created by the Ansible playbook.
+
+## Prerequisites
+
+- An EKS-A cluster must be running and accessible. You can create one using the Ansible playbook in the `ansible` directory.
+- The `kubeconfig` file for the EKS-A cluster must be available at the path specified in the `eksa-dev.tfvars` file (by default, `~/.kube/config`).
+
 ## Usage
- 
-1. Ensure you have a local Kubernetes cluster running (e.g., kind, k3d, Docker Desktop).
-2. Ensure your kubeconfig is at `~/.kube/config` or update `provider.tf` as needed.
-3. Initialize and apply:
- 
-   ```sh
-   cd terraform-eksa
+
+1. **Initialize Terraform:**
+   ```bash
    terraform init
-   terraform apply
    ```
- 
-This configuration is intentionally AWS-free and is designed for rapid, local development and testing.
+
+2. **Apply the configuration:**
+   ```bash
+   terraform apply -var-file=eksa-dev.tfvars
+   ```
+
+This will deploy Argo CD to the EKS-A cluster.

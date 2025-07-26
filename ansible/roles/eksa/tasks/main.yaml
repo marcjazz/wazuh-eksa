@@ -1,0 +1,88 @@
+---
+- name: "Check if eksctl-anywhere exists"
+  ansible.builtin.stat:
+    path: /usr/local/bin/eksctl-anywhere
+  register: eksa_stat
+
+- name: "Install eksctl-anywhere"
+  when: not eksa_stat.stat.exists
+  block:
+    - name: "Download eksctl-anywhere"
+      ansible.builtin.get_url:
+        url: "https://github.com/aws/eks-anywhere/releases/download/v0.18.8/eks-a-v0.18.8-linux-amd64.tar.gz"
+        dest: /tmp/eks-a.tar.gz
+        mode: '0644'
+
+    - name: "Unarchive eksctl-anywhere"
+      ansible.builtin.unarchive:
+        src: /tmp/eks-a.tar.gz
+        dest: /usr/local/bin
+        remote_src: true
+        extra_opts: [--no-same-owner]
+
+- name: "Generate EKS-A cluster configuration file"
+  ansible.builtin.template:
+    src: templates/cluster-config.yaml.j2
+    dest: "{{ cluster_config_path }}"
+    mode: '0644'
+
+- name: "Delete EKS-A cluster"
+  when: delete_cluster
+  block:
+    - name: "Soft delete EKS-A cluster"
+      ansible.builtin.command:
+        cmd: "eksctl anywhere delete cluster -f {{ cluster_config_path }}"
+      register: soft_delete_result
+      changed_when: "'cluster deleted' in soft_delete_result.stdout | lower"
+      ignore_errors: true
+
+    - name: "Force delete EKS-A cluster"
+      when: delete_strategy == 'force' and soft_delete_result.failed
+      block:
+        - name: "Find existing cluster containers"
+          ansible.builtin.command:
+            cmd: "docker ps -a -q --filter name={{ cluster_name }}"
+          register: cluster_containers
+          changed_when: false
+
+        - name: "Stop existing cluster containers"
+          ansible.builtin.command:
+            cmd: "docker stop {{ item }}"
+          with_items: "{{ cluster_containers.stdout_lines }}"
+          ignore_errors: true
+
+        - name: "Remove existing cluster containers"
+          ansible.builtin.command:
+            cmd: "docker rm {{ item }}"
+          with_items: "{{ cluster_containers.stdout_lines }}"
+          ignore_errors: true
+
+        - name: "Delete existing EKS-A cluster if it exists (after force cleanup)"
+          ansible.builtin.command:
+            cmd: "eksctl anywhere delete cluster -f {{ cluster_config_path }}"
+          register: force_delete_result
+          changed_when: "'cluster deleted' in force_delete_result.stdout | lower"
+          ignore_errors: true
+
+- name: "Create EKS-A cluster"
+  ansible.builtin.command:
+    cmd: "eksctl anywhere create cluster -f {{ cluster_config_path }}"
+  register: create_cluster_result
+  changed_when: "'cluster created' in create_cluster_result.stdout | lower"
+
+- name: "Create .kube directory"
+  ansible.builtin.file:
+    path: "/home/{{ ansible_user }}/.kube"
+    state: directory
+    mode: '0755'
+
+- name: "Copy kubeconfig"
+  ansible.builtin.copy:
+    src: "/home/{{ ansible_user }}/{{ cluster_name }}/generated/{{ cluster_name }}-eks-a-cluster.kubeconfig"
+    dest: "/home/{{ ansible_user }}/.kube/config"
+    remote_src: true
+    mode: '0600'
+
+- name: "Display cluster creation result"
+  ansible.builtin.debug:
+    var: create_cluster_result.stdout_lines

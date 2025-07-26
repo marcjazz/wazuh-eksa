@@ -1,24 +1,22 @@
-resource "kubernetes_namespace" "wazuh_eksa" {
+resource "kubernetes_namespace" "argocd" {
   metadata {
-    name = "wazuh-eksa"
+    name = "argocd"
   }
 }
-resource "helm_release" "wazuh" {
-  name       = "wazuh"
-  repository = "https://wazuh.github.io/wazuh-helm/"
-  chart      = "wazuh"
-  namespace  = kubernetes_namespace.wazuh_eksa.metadata[0].name
-  version    = "4.3.0" # Replace with your desired chart version
+
+resource "helm_release" "argocd" {
+  name       = "argocd"
+  repository = "https://argoproj.github.io/argo-helm"
+  chart      = "argo-cd"
+  namespace  = kubernetes_namespace.argocd.metadata[0].name
+  version    = "5.51.5" # Specify a recent, stable version
 
   values = [
-    file("${path.module}/../charts/wazuh/values-eksa.yaml"),
-    yamlencode({
-      wazuh = {
-        api = {
-          username = var.wazuh_api_username
-          password = var.wazuh_api_password
-        }
-      }
-    })
+    file("${path.module}/argocd/values.yaml"),
+    file("${path.module}/argocd/values-eksa.yaml")
+  ]
+
+  depends_on = [
+    kubernetes_namespace.argocd
   ]
 }

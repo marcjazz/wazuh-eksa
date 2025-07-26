@@ -1,0 +1,10 @@
+---
+- name: Install prerequisites for Docker repository
+  ansible.builtin.apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg
+    state: present
+    update_cache: true

@@ -1,27 +1,26 @@
-# Create EKS-A Cluster on an Existing VM with Ansible
+# Ansible Playbook for EKS-A Cluster Creation
 
-This playbook configures an existing VM and creates an EKS Anywhere cluster inside it using the Docker provider.
+This Ansible playbook automates the process of setting up a virtual machine and deploying an EKS-A (EKS Anywhere) cluster on it.
 
 ## Prerequisites
 
-- Ansible 2.10+
-- An existing VM with SSH access.
-- An SSH key pair to connect to the VM.
+- A running Multipass VM with SSH access.
+- The VM's IP address, user, and SSH private key path must be configured in the `inventory.yaml` file.
 
 ## Usage
 
-1.  **Update the inventory:**
+1. **Install Ansible:**
+   Follow the official Ansible installation guide for your operating system.
 
-    Modify `inventory.yaml` with your VM's connection details (IP address, user, and SSH key path).
+2. **Run the playbook:**
+   ```bash
+   ansible-playbook -i inventory.yaml playbook.yaml
+   ```
 
-2.  **Run the playbook:**
+This will:
+- Install necessary prerequisites on the VM.
+- Install Docker.
+- Install `eksctl-anywhere`.
+- Create an EKS-A cluster based on the configuration in `roles/eksa/templates/cluster-config.yaml.j2`.
 
-    ```bash
-    ansible-playbook -i inventory.yaml create_eksa_cluster.yaml
-    ```
-
-    The playbook will:
-    - Connect to the specified VM.
-    - Install Docker, `eksctl`, and `eksctl-anywhere`.
-    - Generate an EKS-A cluster configuration file.
-    - Create the EKS-A cluster.
+Once the playbook has finished, you can use the Terraform configuration in the `terraform` directory to deploy applications to the cluster.

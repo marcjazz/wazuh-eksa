@@ -1,5 +1,5 @@
 kubeconfig         = "~/.kube/config"
 wazuh_api_username = "admin"
 wazuh_api_password = "changeme"
-target_revision    = "develop"
+target_revision    = "master"
 environment        = "eksa-dev"
