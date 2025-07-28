@@ -1,9 +1,9 @@
 provider "kubernetes" {
-  config_path = var.kubeconfig
+  config_path = pathexpand(var.kubeconfig)
 }
 
 provider "helm" {
-  kubernetes = {
-    config_path = var.kubeconfig
+  kubernetes {
+    config_path = pathexpand(var.kubeconfig)
   }
 }

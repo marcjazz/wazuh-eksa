@@ -1,7 +1,7 @@
 variable "environment" {
-  description = "The deployment environment (e.g., local-dev, dev, prod)"
+  description = "The deployment environment (e.g., dev, prod)"
   type        = string
-  default     = "local-dev"
+  default     = "dev"
 }
 
 variable "kubeconfig" {

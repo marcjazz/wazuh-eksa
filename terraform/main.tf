@@ -1,22 +1,22 @@
-resource "kubernetes_namespace" "argocd" {
-  metadata {
-    name = "argocd"
-  }
-}
+module "eksa" {
+  source  = "blackbird-cloud/deployment/helm"
+  version = "~> 1.0"
 
-resource "helm_release" "argocd" {
-  name       = "argocd"
-  repository = "https://argoproj.github.io/argo-helm"
-  chart      = "argo-cd"
-  namespace  = kubernetes_namespace.argocd.metadata[0].name
-  version    = "5.51.5" # Specify a recent, stable version
+  name             = "eksa"
+  namespace        = "argocd"
+  create_namespace = false
+
+  repository    = "https://bedag.github.io/helm-charts"
+  chart         = "raw"
+  chart_version = "2.0.0"
 
   values = [
-    file("${path.module}/argocd/values.yaml"),
-    file("${path.module}/argocd/values-eksa.yaml")
+    templatefile("${path.module}/files/argocd-apps.yml", {
+      environment    = var.environment
+      target_revision = var.target_revision
+    })
   ]
 
-  depends_on = [
-    kubernetes_namespace.argocd
-  ]
+  cleanup_on_fail = true
+  wait            = true
 }

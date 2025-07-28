@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: wazuh
+  namespace: argocd
+spec:
+  project: applications
+  source:
+    repoURL: https://chartmuseum.wazuh.adorsys.team
+    targetRevision: "0.2.25"
+    chart: wazuh-helm
+    helm:
+      repoUsername: "jB4mXCp70Pbq9VpY"
+      repoPassword: "XN9pqd9wonLcqX46"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: wazuh
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
