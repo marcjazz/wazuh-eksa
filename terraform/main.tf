@@ -11,9 +11,11 @@ module "eksa" {
   chart_version = "2.0.0"
 
   values = [
-    templatefile("${path.module}/files/argocd-apps.yml", {
-      environment    = var.environment
-      target_revision = var.target_revision
+    templatefile("${path.module}/files/argocd-apps.yaml", {
+      environment         = var.environment
+      target_revision     = var.target_revision
+      wazuh_api_username  = var.wazuh_api_username
+      wazuh_api_password  = var.wazuh_api_password
     })
   ]
 
