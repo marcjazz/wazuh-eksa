@@ -1,4 +1,18 @@
 resources:
+  - apiVersion: v1
+    kind: Secret
+    metadata:
+      name: wazuh-${environment}
+      namespace: argocd
+      labels:
+        argocd.argoproj.io/secret-type: repo-creds
+    stringData: 
+      type: helm
+      url: https://chartmuseum.wazuh.adorsys.team
+      username: ${wazuh_helm_username}
+      password: ${wazuh_helm_password}
+  
+
   - apiVersion: argoproj.io/v1alpha1
     kind: AppProject
     metadata:
@@ -75,7 +89,7 @@ resources:
   - apiVersion: argoproj.io/v1alpha1
     kind: Application
     metadata:
-      name: wazuh-eksa-${environment}
+      name: wazuh-${environment}
       namespace: argocd
       finalizers:
         - resources-finalizer.argocd.argoproj.io
@@ -83,11 +97,8 @@ resources:
       project: applications
       source:
         repoURL: https://chartmuseum.wazuh.adorsys.team
-        targetRevision: ${target_revision}
+        targetRevision: "0.2.25"
         chart: wazuh-helm
-        helm:
-          repoUsername: ${wazuh_api_username}
-          repoPassword: ${wazuh_api_password}
       destination:
         server: https://kubernetes.default.svc
         namespace: wazuh

@@ -20,3 +20,12 @@ This Terraform configuration is used to deploy applications to the EKS-A cluster
    ```
 
 This will deploy Argo CD to the EKS-A cluster.
+3. **Login to Argo CD (gRPC-Web)**
+
+   ```bash
+   kubectl port-forward svc/argocd-server -n argocd 8080:443
+   argocd login localhost:8080 \
+     --username <username> \
+     --password <password> \
+     --grpc-web
+   ```

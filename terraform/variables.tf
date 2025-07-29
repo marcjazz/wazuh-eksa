@@ -13,13 +13,13 @@ variable "target_revision" {
   type        = string
   default     = "develop"
 }
-variable "wazuh_api_username" {
-  description = "Wazuh API username"
+variable "wazuh_helm_username" {
+  description = "Wazuh Helm repository username"
   type        = string
 }
 
-variable "wazuh_api_password" {
-  description = "Wazuh API password"
+variable "wazuh_helm_password" {
+  description = "Wazuh Helm repository password"
   type        = string
   sensitive   = true
 }

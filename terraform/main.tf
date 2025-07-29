@@ -1,5 +1,6 @@
 module "eksa" {
   source  = "blackbird-cloud/deployment/helm"
+  depends_on = [helm_release.argo_cd]
   version = "~> 1.0"
 
   name             = "eksa"
@@ -14,8 +15,8 @@ module "eksa" {
     templatefile("${path.module}/files/argocd-apps.yaml", {
       environment         = var.environment
       target_revision     = var.target_revision
-      wazuh_api_username  = var.wazuh_api_username
-      wazuh_api_password  = var.wazuh_api_password
+      wazuh_helm_username  = var.wazuh_helm_username
+      wazuh_helm_password  = var.wazuh_helm_password
     })
   ]
 
