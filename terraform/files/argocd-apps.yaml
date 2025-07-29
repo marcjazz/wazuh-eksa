@@ -2,7 +2,31 @@ resources:
   - apiVersion: v1
     kind: Secret
     metadata:
-      name: wazuh-${environment}
+      name: private-helm-repo-remote
+      namespace: argocd
+      labels:
+        argocd.argoproj.io/secret-type: repository
+    stringData: 
+      type: helm
+      url: https://chartmuseum.wazuh.adorsys.team
+      name: private-repo-helm
+  
+  - apiVersion: v1
+    kind: Secret
+    metadata:
+      name: bitnami-helm-repo
+      namespace: argocd
+      labels:
+        argocd.argoproj.io/secret-type: repository
+    stringData: 
+      type: helm
+      name: bitnami
+      url: https://charts.bitnami.com/bitnami
+  
+  - apiVersion: v1
+    kind: Secret
+    metadata:
+      name: private-helm-repo-remote-creds
       namespace: argocd
       labels:
         argocd.argoproj.io/secret-type: repo-creds
