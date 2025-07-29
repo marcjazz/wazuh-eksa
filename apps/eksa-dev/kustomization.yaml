@@ -6,3 +6,5 @@ resources:
   - indexer-secrets.yaml
   - root-ca-secrets.yaml
   - secrets-store.yaml
+  - certificate-example.yaml
+  - vault-token-secret.yaml

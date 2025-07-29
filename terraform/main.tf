@@ -1,6 +1,59 @@
+resource "helm_release" "external_secrets" {
+  name             = "external-secrets"
+  repository       = "https://charts.external-secrets.io"
+  chart            = "external-secrets"
+  version          = "0.9.11"
+  namespace        = "external-secrets"
+  create_namespace = true
+  dependency_update = true
+  skip_crds         = false
+  replace           = true
+
+  set {
+    name  = "installCRDs"
+    value = "true"
+  }
+
+  wait            = true
+  atomic          = true
+  cleanup_on_fail = true
+}
+
+resource "kubernetes_namespace" "cert_manager" {
+  metadata {
+    name = "cert-manager"
+  }
+}
+
+resource "helm_release" "cert_manager" {
+  name             = "cert-manager"
+  repository       = "https://charts.jetstack.io"
+  chart            = "cert-manager"
+  version          = "1.14.0"
+  namespace        = kubernetes_namespace.cert_manager.metadata[0].name
+  create_namespace = false
+  dependency_update = true
+  skip_crds         = false
+  replace           = true
+
+  set {
+    name  = "installCRDs"
+    value = "true"
+  }
+
+  set {
+    name  = "extraArgs[0]"
+    value = "--enable-certificate-owner-ref=true"
+  }
+
+  wait            = true
+  atomic          = true
+  cleanup_on_fail = true
+}
+
 module "eksa" {
   source  = "blackbird-cloud/deployment/helm"
-  depends_on = [helm_release.argo_cd]
+  depends_on = [helm_release.argo_cd, helm_release.external_secrets, helm_release.cert_manager]
   version = "~> 1.0"
 
   name             = "eksa"

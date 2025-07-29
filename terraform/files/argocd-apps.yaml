@@ -111,6 +111,48 @@ resources:
         - "argocd"
 
   - apiVersion: argoproj.io/v1alpha1
+    kind: AppProject
+    metadata:
+      name: infrastructure
+      namespace: argocd
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+    spec:
+      description: Infrastructure management tools
+      sourceRepos:
+        - "*"
+      destinations:
+        - namespace: "*"
+          server: https://kubernetes.default.svc
+      clusterResourceWhitelist:
+        - group: "*"
+          kind: "*"
+      clusterResourceBlacklist: []
+      namespaceResourceBlacklist:
+        - group: ""
+          kind: ResourceQuota
+        - group: ""
+          kind: LimitRange
+        - group: ""
+          kind: NetworkPolicy
+      namespaceResourceWhitelist:
+        - group: "*"
+          kind: "*"
+      orphanedResources: {}
+      roles: []
+      syncWindows:
+        - kind: allow
+          schedule: "10 1 * * *"
+          duration: 1h
+          applications:
+            - "*-infra"
+            - "wazuh-secrets-*"
+          manualSync: true
+      permitOnlyProjectScopedClusters: false
+      sourceNamespaces:
+        - argocd
+
+  - apiVersion: argoproj.io/v1alpha1
     kind: Application
     metadata:
       name: wazuh-${environment}

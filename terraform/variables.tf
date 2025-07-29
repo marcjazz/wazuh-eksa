@@ -23,3 +23,10 @@ variable "wazuh_helm_password" {
   type        = string
   sensitive   = true
 }
+
+
+variable "cert_manager_email" {
+  description = "Email address for cert-manager Let's Encrypt issuers"
+  type        = string
+  default     = "admin@example.com"
+}
