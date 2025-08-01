@@ -1,5 +1,13 @@
+# Wait for cert-manager to be ready before creating issuers
+resource "time_sleep" "wait_for_cert_manager" {
+  depends_on = [helm_release.cert_manager]
+  create_duration = "60s"
+}
+
 # Self-signed Issuer for development and testing
 resource "kubernetes_manifest" "selfsigned_issuer" {
+  depends_on = [time_sleep.wait_for_cert_manager]
+  
   manifest = {
     apiVersion = "cert-manager.io/v1"
     kind       = "ClusterIssuer"
@@ -14,6 +22,8 @@ resource "kubernetes_manifest" "selfsigned_issuer" {
 
 # CA Issuer using the self-signed issuer to create a CA
 resource "kubernetes_manifest" "ca_issuer" {
+  depends_on = [time_sleep.wait_for_cert_manager]
+  
   manifest = {
     apiVersion = "cert-manager.io/v1"
     kind       = "ClusterIssuer"
@@ -30,6 +40,8 @@ resource "kubernetes_manifest" "ca_issuer" {
 
 # Let's Encrypt staging issuer for testing (HTTP01 challenges)
 resource "kubernetes_manifest" "letsencrypt_staging" {
+  depends_on = [time_sleep.wait_for_cert_manager]
+  
   manifest = {
     apiVersion = "cert-manager.io/v1"
     kind       = "ClusterIssuer"
@@ -59,6 +71,8 @@ resource "kubernetes_manifest" "letsencrypt_staging" {
 
 # Let's Encrypt production issuer (HTTP01 challenges)
 resource "kubernetes_manifest" "letsencrypt_production" {
+  depends_on = [time_sleep.wait_for_cert_manager]
+  
   manifest = {
     apiVersion = "cert-manager.io/v1"
     kind       = "ClusterIssuer"
