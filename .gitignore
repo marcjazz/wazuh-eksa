@@ -2,9 +2,56 @@
 .terraform/
 *.tfstate
 *.tfstate.*
+*.tfvars
+!*.tfvars.example
+
+# Ansible
+*.retry
+.vault_pass
+
+# SSH Keys
+*.pem
+*.key
+id_rsa*
+*.ssh
+
+# Secrets and Credentials
+secrets/
+*.secret
+*.token
+.env
+.env.*
+!.env.example
+
+# Certificates
+*-certs/
+*.crt
+*.cert
+*.p12
+*.pfx
 
 # IDE / Editor
 .vscode/
+.idea/
+*.swp
+*.swo
+*~
 
+# Logs
 eksa-cli-logs
-wazuh-certs
+*.log
+logs/
+
+# Backup files
+*.bak
+*.backup
+*.orig
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

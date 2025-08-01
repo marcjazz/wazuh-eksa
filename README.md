@@ -7,6 +7,30 @@ This project automates the deployment of an EKS Anywhere (EKS-A) cluster on a Mu
 1.  **Provision EKS-A Cluster:** The Ansible playbook in the `ansible` directory sets up the Multipass VM, installs all necessary dependencies, and creates an EKS-A cluster.
 2.  **Deploy Applications:** The Terraform configuration in the `terraform` directory deploys Argo CD, External Secrets Operator, and cert-manager to the newly created EKS-A cluster.
 
+## Security Setup (IMPORTANT - Do this first!)
+
+⚠️ **Before running any commands, you must configure sensitive data properly:**
+
+1. **Configure Terraform variables:**
+   ```bash
+   cp terraform/terraform.tfvars.example terraform/terraform.tfvars
+   # Edit terraform/terraform.tfvars with your actual credentials
+   ```
+
+2. **Configure Ansible inventory:**
+   ```bash
+   cp ansible/inventory.yaml.example ansible/inventory.yaml
+   # Edit ansible/inventory.yaml with your actual VM details and SSH keys
+   ```
+
+3. **Set up Vault token (for Kubernetes secrets):**
+   ```bash
+   export VAULT_TOKEN="your-actual-vault-token"
+   kubectl create secret generic vault-token --from-literal=token=$VAULT_TOKEN -n external-secrets
+   ```
+
+📖 **Read [SECURITY.md](SECURITY.md) for comprehensive security best practices.**
+
 ## Instructions
 
 1.  **Create and configure the EKS-A cluster:**
