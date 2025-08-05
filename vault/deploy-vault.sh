@@ -25,9 +25,20 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# Apply the vault token secret
+# Create the vault token secret with the actual token
 echo "3. Creating Vault token secret..."
-kubectl apply -f ../apps/eksa-dev/vault-token-secret.yaml
+# Delete existing secret if it exists (ignore errors)
+kubectl delete secret vault-token -n external-secrets --ignore-not-found=true
+
+# Create the secret with the actual root token (base64 encoded)
+# The Vault deployment uses "root-token" as the dev root token
+kubectl create secret generic vault-token \
+  --from-literal=token="root-token" \
+  -n external-secrets
+
+# Add the annotation to indicate manual management
+kubectl annotate secret vault-token -n external-secrets \
+  external-secrets.io/managed-by=manual
 
 # Apply the updated secrets store configuration
 echo "4. Updating ClusterSecretStore configuration..."

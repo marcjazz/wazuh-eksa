@@ -6,7 +6,7 @@ This directory contains the configuration files for setting up HashiCorp Vault a
 
 - Kubernetes cluster
 - kubectl configured to access the cluster
-- Vault CLI installed (optional, for manual operations)
+- No Vault CLI installation required (all operations use kubectl exec)
 
 ## Deployment
 

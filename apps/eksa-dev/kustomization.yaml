@@ -8,3 +8,4 @@ resources:
   - secrets-store.yaml
   - certificate-example.yaml
   - vault-token-secret.yaml
+  - cluster-auth-secrets.yaml

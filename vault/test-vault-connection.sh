@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Test script to verify Vault connectivity and secret access
+# This version uses kubectl exec instead of requiring Vault CLI locally
 
 echo "Testing Vault connectivity..."
 
@@ -8,39 +9,33 @@ echo "Testing Vault connectivity..."
 echo "Checking Vault pod status..."
 kubectl get pods -n vault
 
-# Port forward to Vault
-echo "Setting up port forward to Vault..."
-kubectl port-forward service/vault -n vault 8200:8200 &
-PORT_FORWARD_PID=$!
+# Get the Vault pod name
+VAULT_POD=$(kubectl get pods -n vault -l app.kubernetes.io/name=vault -o jsonpath='{.items[0].metadata.name}')
+if [ -z "$VAULT_POD" ]; then
+    echo "Error: No Vault pod found"
+    exit 1
+fi
 
-# Give port forward time to start
-sleep 5
+echo "Using Vault pod: $VAULT_POD"
 
-# Export Vault address and token
-export VAULT_ADDR='http://127.0.0.1:8200'
-export VAULT_TOKEN='root-token'
-
-# Check Vault status
+# Check Vault status using kubectl exec
 echo "Checking Vault status..."
-vault status
+kubectl exec -n vault $VAULT_POD -- env VAULT_ADDR='http://127.0.0.1:8200' VAULT_TOKEN='root-token' vault status
 
-# List secrets engines
+# List secrets engines using kubectl exec
 echo "Listing secrets engines..."
-vault secrets list
+kubectl exec -n vault $VAULT_POD -- env VAULT_ADDR='http://127.0.0.1:8200' VAULT_TOKEN='root-token' vault secrets list
 
-# Test reading secrets
+# Test reading secrets using kubectl exec
 echo "Testing secret access..."
 
 echo "Reading indexer secrets..."
-vault kv get secret/dev/github/wazuh/indexer
+kubectl exec -n vault $VAULT_POD -- env VAULT_ADDR='http://127.0.0.1:8200' VAULT_TOKEN='root-token' vault kv get secret/dev/github/wazuh/indexer
 
 echo "Reading API secrets..."
-vault kv get secret/dev/github/wazuh
+kubectl exec -n vault $VAULT_POD -- env VAULT_ADDR='http://127.0.0.1:8200' VAULT_TOKEN='root-token' vault kv get secret/dev/github/wazuh
 
 echo "Reading root CA secrets..."
-vault kv get secret/dev/github/wazuh/root-ca
-
-# Clean up port forward
-kill $PORT_FORWARD_PID
+kubectl exec -n vault $VAULT_POD -- env VAULT_ADDR='http://127.0.0.1:8200' VAULT_TOKEN='root-token' vault kv get secret/dev/github/wazuh/root-ca
 
 echo "Vault connectivity test completed!"

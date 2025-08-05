@@ -18,22 +18,23 @@ kubectl get pods -n wazuh
 
 # 2. Check if Vault is properly configured
 echo "2. Testing Vault connectivity..."
-kubectl port-forward service/vault -n vault 8200:8200 &
-PORT_FORWARD_PID=$!
-sleep 5
 
-export VAULT_ADDR='http://127.0.0.1:8200'
-export VAULT_TOKEN='root-token'
+# Get the Vault pod name
+VAULT_POD=$(kubectl get pods -n vault -l app.kubernetes.io/name=vault -o jsonpath='{.items[0].metadata.name}')
+if [ -z "$VAULT_POD" ]; then
+    echo "Error: No Vault pod found"
+    exit 1
+fi
+
+echo "Using Vault pod: $VAULT_POD"
 
 echo "Vault status:"
-vault status
+kubectl exec -n vault $VAULT_POD -- env VAULT_ADDR='http://127.0.0.1:8200' VAULT_TOKEN='root-token' vault status
 
 echo "Secrets in Vault:"
-vault kv get secret/dev/github/wazuh/indexer
-vault kv get secret/dev/github/wazuh
-vault kv get secret/dev/github/wazuh/root-ca
-
-kill $PORT_FORWARD_PID
+kubectl exec -n vault $VAULT_POD -- env VAULT_ADDR='http://127.0.0.1:8200' VAULT_TOKEN='root-token' vault kv get secret/dev/github/wazuh/indexer
+kubectl exec -n vault $VAULT_POD -- env VAULT_ADDR='http://127.0.0.1:8200' VAULT_TOKEN='root-token' vault kv get secret/dev/github/wazuh
+kubectl exec -n vault $VAULT_POD -- env VAULT_ADDR='http://127.0.0.1:8200' VAULT_TOKEN='root-token' vault kv get secret/dev/github/wazuh/root-ca
 
 # 3. Check if ClusterSecretStore is properly configured
 echo "3. Checking ClusterSecretStore configuration..."
