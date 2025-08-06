@@ -51,9 +51,46 @@ resource "helm_release" "cert_manager" {
   cleanup_on_fail = true
 }
 
+# Add local-path-provisioner via Helm
+resource "helm_release" "local_path_provisioner" {
+  name             = "local-path-provisioner"
+  repository       = "https://charts.containeroo.ch"
+  chart            = "local-path-provisioner"
+  version          = "0.0.33"
+  namespace        = "local-path-storage"
+  create_namespace = true
+  dependency_update = true
+  skip_crds         = false
+  replace           = true
+
+  set {
+    name  = "storageClass.create"
+    value = "true"
+  }
+
+  set {
+    name  = "storageClass.defaultClass"
+    value = "true"
+  }
+
+  set {
+    name  = "storageClass.name"
+    value = "local-path"
+  }
+
+  set {
+    name  = "storageClass.reclaimPolicy"
+    value = "Delete"
+  }
+
+  wait            = true
+  atomic          = true
+  cleanup_on_fail = true
+}
+
 module "eksa" {
   source  = "blackbird-cloud/deployment/helm"
-  depends_on = [helm_release.argo_cd, helm_release.external_secrets, helm_release.cert_manager]
+  depends_on = [helm_release.argo_cd, helm_release.external_secrets, helm_release.cert_manager, helm_release.local_path_provisioner]
   version = "~> 1.0"
 
   name             = "eksa"

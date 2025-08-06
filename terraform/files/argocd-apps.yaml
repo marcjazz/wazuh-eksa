@@ -171,7 +171,11 @@ resources:
           valuesObject:
             nameOverride: 'wazuh'
             global:
-              domain: 'dev.wazuh.adorsys.team'
+              domain: 'eks-dev.wazuh.adorsys.team'
+            storageClasses:
+              '{{ include "wazuh.storageClassName" $ }}':
+                provisioner: cluster.local/local-path-provisioner
+                volumeBindingMode: WaitForFirstConsumer
             cluster:
               secret:
                 enabled: true
