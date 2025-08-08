@@ -42,7 +42,7 @@ kubectl annotate secret vault-token -n external-secrets \
 
 # Apply the updated secrets store configuration
 echo "4. Updating ClusterSecretStore configuration..."
-kubectl apply -f ../apps/eksa-dev/secrets-store.yaml
+kubectl apply -f ../apps/add-ons/secrets-store.yaml
 
 # Populate Vault with secrets
 echo "5. Populating Vault with secrets..."

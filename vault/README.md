@@ -22,12 +22,12 @@ This directory contains the configuration files for setting up HashiCorp Vault a
 
 3. Create the Vault token secret:
    ```bash
-   kubectl apply -f ../apps/eksa-dev/vault-token-secret.yaml
+   kubectl apply -f ../apps/add-ons/vault-token-secret.yaml
    ```
 
 4. Apply the ClusterSecretStore configuration:
    ```bash
-   kubectl apply -f ../apps/eksa-dev/secrets-store.yaml
+   kubectl apply -f ../apps/add-ons/secrets-store.yaml
    ```
 
 5. Populate Vault with secrets:
@@ -54,6 +54,6 @@ The following secrets are stored in Vault:
 
 ## Integration with External Secrets Operator
 
-The External Secrets Operator is configured to use Vault as the secret store. The `ClusterSecretStore` resource in `apps/eksa-dev/secrets-store.yaml` references Vault as the provider.
+The External Secrets Operator is configured to use Vault as the secret store. The `ClusterSecretStore` resource in `apps/add-ons/secrets-store.yaml` references Vault as the provider.
 
 A Kubernetes secret `vault-token` in the `external-secrets` namespace contains the Vault token for authentication.
