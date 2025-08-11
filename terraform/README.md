@@ -19,11 +19,27 @@ This Terraform configuration is used to deploy applications to the EKS-A cluster
    terraform apply -var-file=eksa-dev.tfvars
    ```
 
-This will deploy Argo CD, the External Secrets Operator, and cert-manager to the EKS-A cluster.
+This will deploy Argo CD to the EKS-A cluster. All other infrastructure components (cert-manager, external-secrets, local-path-provisioner, CA certificate) are now managed by ArgoCD through Kubernetes manifests.
+
+## Architecture
+
+The infrastructure components are now managed through ArgoCD applications rather than Terraform. This provides better GitOps compliance and allows for easier management of these components.
+
+### Components Managed by ArgoCD
+
+The following components are now managed by ArgoCD through Kubernetes manifests:
+
+1. **cert-manager**: Certificate management for TLS certificates
+2. **External Secrets Operator**: Secret management integration with external secret stores
+3. **local-path-provisioner**: Storage provisioner for development environments
+4. **CA Certificate**: Certificate Authority certificate for cert-manager
+5. **Namespaces**: Required Kubernetes namespaces for the components
+
+These components are deployed through the `apps/infrastructure/` directory which is managed by ArgoCD.
 
 ## External Secrets Operator
 
-The External Secrets Operator is deployed as part of this Terraform configuration to manage secrets in the cluster. It provides the necessary Custom Resource Definitions (CRDs) for ExternalSecret resources used by the applications.
+The External Secrets Operator is now deployed through ArgoCD rather than Terraform. It provides the necessary Custom Resource Definitions (CRDs) for ExternalSecret resources used by the applications.
 
 For more detailed information about the External Secrets Operator implementation, see [EXTERNAL_SECRETS.md](EXTERNAL_SECRETS.md).
 

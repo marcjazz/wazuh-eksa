@@ -171,11 +171,7 @@ resources:
           valuesObject:
             nameOverride: 'wazuh'
             global:
-              domain: 'eks-dev.wazuh.adorsys.team'
-            storageClasses:
-              '{{ include "wazuh.storageClassName" $ }}':
-                provisioner: cluster.local/local-path-provisioner
-                volumeBindingMode: WaitForFirstConsumer
+              domain: ${environment}.wazuh.adorsys.team
             cluster:
               secret:
                 enabled: true
@@ -203,7 +199,6 @@ resources:
               ingress:
                 annotations:
                   alb.ingress.kubernetes.io/load-balancer-name: dev-lb
-                  alb.ingress.kubernetes.io/certificate-arn: 'arn:aws:acm:eu-central-1:917848404243:certificate/3880296f-c351-4efb-8ef7-a83463eb6bfb'
       destination:
         server: https://kubernetes.default.svc
         namespace: wazuh

@@ -70,7 +70,7 @@ flowchart TD
 - **Both environments use EKS-A** for cluster lifecycle management.
 - **Production** runs on vSphere, using vSphere CSI, Infoblox DNS, Vault, and MetalLB.
 - **Development** runs on Docker, using local-path-provisioner, CoreDNS, Kubernetes secrets, and MetalLB or NodePort.
-- **ArgoCD** is installed via Helm and manages application deployment in both environments, with overlays for provider-specific settings.
+- **ArgoCD** is installed via Terraform and manages infrastructure deployment in both environments, with applications managed by ArgoCD.
 - **Policy & Metrics:** Gatekeeper and Metrics Server are deployed in both environments.
 - **Flexibility:** The architecture supports overlays (via Kustomize/Helm) to adapt manifests for each provider.
 
@@ -78,6 +78,21 @@ flowchart TD
 
 - Use Kustomize or Helm values to manage differences (e.g., storage class, DNS provider, secrets backend).
 - ArgoCD applications can reference overlays for prod/dev as needed.
+
+## Infrastructure Management
+
+Infrastructure components are now managed through ArgoCD applications rather than Terraform. This provides better GitOps compliance and allows for easier management of these components.
+
+### Components Managed by ArgoCD
+
+The following infrastructure components are now managed by ArgoCD through Kubernetes manifests:
+
+1. **cert-manager**: Certificate management for TLS certificates
+2. **External Secrets Operator**: Secret management integration with external secret stores
+3. **local-path-provisioner**: Storage provisioner for development environments
+4. **Namespaces**: Required Kubernetes namespaces for the components
+
+These components are deployed through the `apps/infrastructure/` directory which is managed by ArgoCD.
 
 ---
 
