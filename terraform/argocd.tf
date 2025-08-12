@@ -1,3 +1,10 @@
+resource "kubernetes_namespace" "argocd" {
+  metadata {
+    name = "argocd"
+  }
+  
+}
+
 resource "helm_release" "argo_cd" {
   name             = "argocd"
   repository       = "https://argoproj.github.io/argo-helm"
@@ -8,13 +15,7 @@ resource "helm_release" "argo_cd" {
   dependency_update = true
   skip_crds         = true
   replace           = true
-
-  set {
-    name  = "server.service.type"
-    value = "ClusterIP"
-  }
-
-  wait            = true
+  
   atomic          = true
   cleanup_on_fail = true
 }

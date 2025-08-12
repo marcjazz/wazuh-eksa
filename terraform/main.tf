@@ -6,7 +6,7 @@ module "argocd_apps" {
   depends_on = [helm_release.argo_cd] # Only argo_cd is still managed by Terraform
   version    = "~> 1.0"
 
-  name             = "argocd_apps"
+  name             = "argocd-apps"
   namespace        = "argocd"
   create_namespace = false
 
