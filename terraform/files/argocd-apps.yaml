@@ -219,7 +219,7 @@ resources:
       source:
         repoURL: https://github.com/ADORSYS-GIS/wazuh-eksa
         targetRevision: ${target_revision}
-        path: apps/add-ons
+        path: apps/infrastructure
       destination:
         server: https://kubernetes.default.svc
         namespace: wazuh

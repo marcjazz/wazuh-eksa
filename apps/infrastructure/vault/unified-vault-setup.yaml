@@ -1,0 +1,189 @@
+---
+# Unified Vault deployment and configuration
+# This file combines the Vault deployment with the necessary RBAC and secret store configuration
+
+# Vault namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: vault
+---
+# Vault service
+apiVersion: v1
+kind: Service
+metadata:
+  name: vault
+  namespace: vault
+  labels:
+    app.kubernetes.io/name: vault
+spec:
+  selector:
+    app.kubernetes.io/name: vault
+  ports:
+    - name: http
+      port: 8200
+      targetPort: 8200
+  type: ClusterIP
+---
+# Vault deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vault
+  namespace: vault
+  labels:
+    app.kubernetes.io/name: vault
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: vault
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: vault
+    spec:
+      serviceAccountName: vault
+      containers:
+        - name: vault
+          image: hashicorp/vault:1.15.0
+          env:
+            - name: VAULT_DEV_ROOT_TOKEN_ID
+              value: "root-token"
+            - name: VAULT_DEV_LISTEN_ADDRESS
+              value: "0.0.0.0:8200"
+          ports:
+            - containerPort: 8200
+          readinessProbe:
+            httpGet:
+              path: "/v1/sys/health?standbyok=true"
+              port: 8200
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: "/v1/sys/health?standbyok=true"
+              port: 8200
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 5
+---
+# Vault service account
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vault
+  namespace: vault
+---
+# Vault RBAC binding
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: vault-server-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:auth-delegator
+subjects:
+  - kind: ServiceAccount
+    name: vault
+    namespace: vault
+---
+# Vault token secret in external-secrets namespace
+apiVersion: v1
+kind: Secret
+metadata:
+  name: vault-token
+  namespace: external-secrets
+  annotations:
+    external-secrets.io/managed-by: "manual"
+type: Opaque
+data:
+  # Base64 encoded "root-token" for development use
+  token: "cm9vdC10b2tlbg=="
+---
+# ClusterSecretStore configuration for External Secrets Operator
+apiVersion: external-secrets.io/v1beta1
+kind: ClusterSecretStore
+metadata:
+  name: wazuh-secret-store
+spec:
+  provider:
+    vault:
+      server: "http://vault.vault.svc.cluster.local:8200"
+      path: "secret"
+      version: "v2"
+      auth:
+        tokenSecretRef:
+          name: vault-token
+          key: token
+          namespace: external-secrets
+---
+# ExternalSecrets for Wazuh components
+# Indexer secrets
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: wazuh-indexer-external-secret
+  namespace: wazuh
+spec:
+  refreshInterval: 10m
+  secretStoreRef:
+    name: wazuh-secret-store
+    kind: ClusterSecretStore
+  target:
+    name: ext-wazuh-indexer-secrets
+  data:
+    - secretKey: "INDEXER_USERNAME"
+      remoteRef:
+        key: dev/github/wazuh/indexer
+        property: indexer-username
+    - secretKey: "INDEXER_PASSWORD"
+      remoteRef:
+        key: dev/github/wazuh/indexer
+        property: indexer-password
+---
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: wazuh-dashboard-external-secret
+  namespace: wazuh
+spec:
+  refreshInterval: 10m
+  secretStoreRef:
+    name: wazuh-secret-store
+    kind: ClusterSecretStore
+  target:
+    name: ext-wazuh-dashboard-secrets
+  data:
+    - secretKey: "DASHBOARD_USERNAME"
+      remoteRef:
+        key: dev/github/wazuh/indexer
+        property: dashboard-username
+    - secretKey: "DASHBOARD_PASSWORD"
+      remoteRef:
+        key: dev/github/wazuh/indexer
+        property: dashboard-password
+---
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: wazuh-api-external-secret
+  namespace: wazuh
+spec:
+  refreshInterval: 10m
+  secretStoreRef:
+    name: wazuh-secret-store
+    kind: ClusterSecretStore
+  target:
+    name: ext-wazuh-api-credentials
+  data:
+    - secretKey: "API_USERNAME"
+      remoteRef:
+        key: dev/github/wazuh
+        property: api-username
+    - secretKey: "API_PASSWORD"
+      remoteRef:
+        key: dev/github/wazuh
+        property: api-password

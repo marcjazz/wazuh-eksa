@@ -3,8 +3,9 @@ kind: Kustomization
 namespace: wazuh
 
 resources:
-  - namespaces/
+  - namespaces.yaml
+  - external-secrets.yaml
+  - local-path-provisioner.yaml
+  - vault/unified-vault-setup.yaml
   - cert-manager/
-  - external-secrets/
-  - storage/
   - secrets/
