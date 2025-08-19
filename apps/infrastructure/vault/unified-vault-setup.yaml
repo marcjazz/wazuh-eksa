@@ -90,6 +90,31 @@ subjects:
     name: vault
     namespace: vault
 ---
+# Vault policy for KV secrets engine
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vault-kv-policy
+  namespace: vault
+data:
+  policy.hcl: |
+    path "secret/*" {
+      capabilities = ["create", "read", "update", "delete", "list", "sudo", "mount"]
+    }
+---
+# Policy binding
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vault-policy-binding
+  namespace: vault
+data:
+  binding.json: |
+    {
+      "role_name": "vault-kv-role",
+      "policies": ["vault-kv-policy"]
+    }
+---
 # Vault token secret in external-secrets namespace
 apiVersion: v1
 kind: Secret

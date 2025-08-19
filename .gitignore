@@ -23,7 +23,6 @@ id_rsa*
 !.env.example
 
 # Certificates
-*-certs/
 *.crt
 *.cert
 *.p12

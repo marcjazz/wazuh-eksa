@@ -2,7 +2,6 @@ resource "kubernetes_namespace" "argocd" {
   metadata {
     name = "argocd"
   }
-  
 }
 
 resource "helm_release" "argo_cd" {
@@ -18,4 +17,8 @@ resource "helm_release" "argo_cd" {
   
   atomic          = true
   cleanup_on_fail = true
+
+  depends_on = [
+    kubernetes_namespace.argocd
+  ]
 }

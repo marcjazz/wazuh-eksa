@@ -1,58 +1,45 @@
-# EKS-A Cluster with Ansible and Terraform
+# Wazuh EKSA Deployment
 
-This project automates the deployment of an EKS Anywhere (EKS-A) cluster on a Multipass VM using Ansible, and then deploys applications to the cluster using Terraform.
+This repository contains the necessary configurations and scripts to deploy Wazuh on an EKS Anywhere (EKSA) cluster with HashiCorp Vault for secret management.
 
-## Workflow
+## Architecture Overview
 
-1.  **Provision EKS-A Cluster:** The Ansible playbook in the `ansible` directory sets up the Multipass VM, installs all necessary dependencies, and creates an EKS-A cluster.
-2.  **Deploy Applications:** The Terraform configuration in the `terraform` directory deploys Argo CD, External Secrets Operator, and cert-manager to the newly created EKS-A cluster.
+The deployment consists of:
+1. **EKS-A Cluster** - Created using Ansible on a virtual machine
+2. **HashiCorp Vault** - Deployed as a secrets management solution
+3. **External Secrets Operator** - Bridges Kubernetes secrets with Vault
+4. **Wazuh Components** - Deployed using ArgoCD and Terraform
 
-## Security Setup (IMPORTANT - Do this first!)
+## Prerequisites
 
-⚠️ **Before running any commands, you must configure sensitive data properly:**
+- Multipass VM or similar virtualization platform
+- SSH access to the VM
+- Ansible installed locally
+- Terraform installed locally
+- kubectl configured to access the cluster (after deployment)
 
-1. **Configure Terraform variables:**
-   ```bash
-   cp terraform/terraform.tfvars.example terraform/terraform.tfvars
-   # Edit terraform/terraform.tfvars with your actual credentials
-   ```
+## Deployment Process
 
-2. **Configure Ansible inventory:**
-   ```bash
-   cp ansible/inventory.yaml.example ansible/inventory.yaml
-   # Edit ansible/inventory.yaml with your actual VM details and SSH keys
-   ```
+### 1. Set up the EKS-A Cluster
 
-3. **Set up Vault token (for Kubernetes secrets):**
-   ```bash
-   export VAULT_TOKEN="your-actual-vault-token"
-   kubectl create secret generic vault-token --from-literal=token=$VAULT_TOKEN -n external-secrets
-   ```
+First, you need to create and configure a virtual machine and deploy the EKS-A cluster:
 
-📖 **Read [SECURITY.md](SECURITY.md) for comprehensive security best practices.**
+```bash
+# 1. Copy and configure the inventory file
+cp ansible/inventory.yaml.example ansible/inventory.yaml
+# Edit ansible/inventory.yaml with your VM details
 
-## Instructions
+# 2. Run the Ansible playbook to set up the EKS-A cluster
+cd ansible
+ansible-playbook -i inventory.yaml playbook.yaml
+cd ..
 
-1.  **Create and configure the EKS-A cluster:**
-    -   Follow the instructions in `ansible/README.md` to run the Ansible playbook.
+# 3. Configure kubectl to access the cluster
+# This step depends on your specific setup but typically involves:
+# - Copying the kubeconfig from the VM
+# - Setting the KUBECONFIG environment variable
+```
 
-2.  **Deploy Argo CD, External Secrets Operator, and cert-manager to the cluster:**
-    -   Once the cluster is running, follow the instructions in `terraform/README.md` to apply the Terraform configuration.
+### 2. Deploy HashiCorp Vault
 
-For more detailed information, refer to the `README.md` files in the `ansible` and `terraform` directories.
-
-## External Secrets Operator
-
-This project uses External Secrets Operator with HashiCorp Vault to manage secrets instead of the fake provider. For more information about the implementation, see [vault/README.md](vault/README.md).
-
-## Certificate Management
-
-This project uses cert-manager for certificate management. For more information about the implementation, see [terraform/README.md](terraform/README.md).
-
-## Directory Structure
-
-- `ansible/` - Ansible playbooks for cluster creation and configuration
-- `apps/` - Kubernetes manifests for applications
-- `terraform/` - Terraform configurations for infrastructure and ArgoCD applications
-- `vault/` - HashiCorp Vault configuration for secret management
-- `wazuh-certs/` - Certificate files for Wazuh components
+After the E
