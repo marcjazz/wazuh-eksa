@@ -7,3 +7,7 @@
     - role: docker
       when: eksa_provider == 'docker'
     - role: eksa
+    - role: cert_manager
+    - role: external_secrets
+    - role: kube_manifests
+    - role: wazuh

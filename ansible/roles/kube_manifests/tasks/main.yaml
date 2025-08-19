@@ -1,0 +1,30 @@
+---
+- name: Wait for cert-manager deployments to be ready
+  community.kubernetes.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    name: "{{ item }}"
+    namespace: cert-manager
+  register: deployment_info
+  until: "deployment_info.resources | length > 0 and deployment_info.resources[0].status.readyReplicas is defined and deployment_info.resources[0].status.readyReplicas == deployment_info.resources[0].spec.replicas"
+  retries: 20
+  delay: 15
+  loop:
+    - cert-manager
+    - cert-manager-cainjector
+    - cert-manager-webhook
+
+- name: Wait for external-secrets deployment to be ready
+  community.kubernetes.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    name: external-secrets
+    namespace: external-secrets
+  register: deployment_info
+  until: "deployment_info.resources | length > 0 and deployment_info.resources[0].status.readyReplicas is defined and deployment_info.resources[0].status.readyReplicas == deployment_info.resources[0].spec.replicas"
+  retries: 20
+  delay: 15
+
+- name: Apply remaining infrastructure manifests
+  community.kubernetes.kustomize:
+    path: "{{ playbook_dir }}/files/apps/infrastructure"

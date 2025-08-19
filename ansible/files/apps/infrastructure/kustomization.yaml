@@ -3,8 +3,6 @@ kind: Kustomization
 
 resources:
   - namespaces.yaml
-  - external-secrets.yaml
   - local-path-provisioner.yaml
   - vault/
-  - cert-manager/
   - secrets/

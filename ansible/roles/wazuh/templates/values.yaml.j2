@@ -1,0 +1,30 @@
+nameOverride: 'wazuh'
+global:
+  domain: {{ wazuh_environment }}.wazuh.adorsys.team
+cluster:
+  secret:
+    enabled: true
+  rootCaSecretName: 'ext-wazuh-root-ca-secrets'
+  auth:
+    secretName: 'ext-wazuh-cluster-auth-secrets'
+    secretKey: 'CLUSTER_AUTH_KEY'
+
+worker:
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            topologyKey: kubernetes.io/hostname
+
+indexer:
+  authSecret: 'ext-wazuh-indexer-secrets'
+
+apiCred:
+  authSecret: 'ext-wazuh-api-credentials'
+
+dashboard:
+  authSecret: 'ext-wazuh-dashboard-secrets'
+  ingress:
+    annotations:
+      alb.ingress.kubernetes.io/load-balancer-name: dev-lb
