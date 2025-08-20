@@ -1,0 +1,41 @@
+- name: Install image-builder dependencies
+  ansible.builtin.apt:
+    name:
+      - qemu-utils
+      - kpartx
+      - parted
+      - dosfstools
+      - e2fsprogs
+      - cloud-image-utils
+    state: present
+  become: true
+
+- name: Download OS image
+  ansible.builtin.get_url:
+    url: "{{ osImageURL }}"
+    dest: "/tmp/base-os.qcow2"
+    mode: '0644'
+
+- name: Build OS image
+  ansible.builtin.command: |
+    image-builder build \
+      --os-image /tmp/base-os.qcow2 \
+      --output-dir /tmp/built-image \
+      --nameservers "{{ nameservers }}" \
+      --disk "{{ disk }}"
+  args:
+    creates: /tmp/built-image/eksa-os.qcow2
+
+- name: Make built OS image accessible via web server
+  ansible.builtin.copy:
+    src: /tmp/built-image/eksa-os.qcow2
+    dest: /var/www/html/eksa-os.qcow2
+    mode: '0644'
+  become: true
+
+- name: Ensure web server is running
+  ansible.builtin.service:
+    name: apache2
+    state: started
+    enabled: true
+  become: true

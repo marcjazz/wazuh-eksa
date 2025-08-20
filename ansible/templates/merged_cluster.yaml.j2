@@ -1,0 +1,79 @@
+apiVersion: anywhere.eks.amazonaws.com/v1alpha1
+kind: Cluster
+metadata:
+  name: {{ cluster_name }}
+spec:
+  clusterNetwork:
+    cniConfig:
+      cilium: {}
+    pods:
+      cidrBlocks:
+      - 192.168.0.0/16
+    services:
+      cidrBlocks:
+      - 10.96.0.0/12
+  controlPlaneConfiguration:
+    count: 3
+    endpoint:
+      host: "{{ control_plane_endpoint }}"
+      port: 6443
+    machineGroupRef:
+      kind: TinkerbellMachineConfig
+      name: {{ cluster_name }}-cp
+  datacenterRef:
+    kind: TinkerbellDatacenterConfig
+    name: {{ cluster_name }}
+  kubernetesVersion: "{{ kubernetes_version }}"
+  managementCluster:
+    name: {{ cluster_name }}
+  workerNodeGroupConfigurations:
+  - name: {{ cluster_name }}-workers
+    count: 2
+    machineGroupRef:
+      kind: TinkerbellMachineConfig
+      name: {{ cluster_name }}-wk
+---
+apiVersion: anywhere.eks.amazonaws.com/v1alpha1
+kind: TinkerbellDatacenterConfig
+metadata:
+  name: {{ cluster_name }}
+spec:
+  tinkerbellIP: "{{ tinkerbell_ip }}"
+  osImageURL: "http://{{ hostvars[groups['all'][0]]['ansible_host'] }}/eksa-os.qcow2"
+---
+apiVersion: anywhere.eks.amazonaws.com/v1alpha1
+kind: TinkerbellMachineConfig
+metadata:
+  name: {{ cluster_name }}-cp
+spec:
+  hardwareSelector:
+    type: cp
+  osFamily: ubuntu
+  templateRef: {}
+  users:
+  - name: {{ machine_user }}
+    sshAuthorizedKeys:
+    - "{{ ssh_pub_key }}"
+---
+apiVersion: anywhere.eks.amazonaws.com/v1alpha1
+kind: TinkerbellMachineConfig
+metadata:
+  name: {{ cluster_name }}-wk
+spec:
+  hardwareSelector:
+    type: wk
+  osFamily: ubuntu
+  templateRef:
+    kind: TinkerbellTemplateConfig
+    name: {{ cluster_name }}
+  users:
+  - name: {{ machine_user }}
+    sshAuthorizedKeys:
+    - "{{ ssh_pub_key }}"
+---
+apiVersion: anywhere.eks.amazonaws.com/v1alpha1
+kind: TinkerbellTemplateConfig
+metadata:
+  name: {{ cluster_name }}
+spec:
+  osImageURL: "{{ os_image_url }}"

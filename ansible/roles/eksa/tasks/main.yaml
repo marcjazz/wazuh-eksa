@@ -1,3 +1,44 @@
+- name: "Check if eksctl exists"
+  ansible.builtin.stat:
+    path: /usr/local/bin/eksctl
+  register: eksctl_stat
+
+- name: "Install eksctl"
+  when: not eksctl_stat.stat.exists
+  block:
+    - name: "Download eksctl (Linux amd64)"
+      ansible.builtin.get_url:
+        url: "https://github.com/eksctl-io/eksctl/releases/download/v0.180.0/eksctl_Linux_amd64.tar.gz"
+        dest: /tmp/eksctl.tar.gz
+        mode: '0644'
+
+    - name: "Extract eksctl binary"
+      ansible.builtin.unarchive:
+        src: /tmp/eksctl.tar.gz
+        dest: /tmp
+        remote_src: true
+
+    - name: "Move eksctl binary to /usr/local/bin"
+      ansible.builtin.command:
+        cmd: mv /tmp/eksctl /usr/local/bin/eksctl
+      args:
+        creates: /usr/local/bin/eksctl
+
+    - name: "Ensure eksctl is executable"
+      ansible.builtin.file:
+        path: /usr/local/bin/eksctl
+        mode: '0755'
+        state: file
+
+    - name: "Verify eksctl binary"
+      ansible.builtin.command: file /usr/local/bin/eksctl
+      register: eksctl_file_check
+
+    - name: "Fail if eksctl binary is not Linux ELF"
+      ansible.builtin.fail:
+        msg: "Downloaded eksctl is not a valid Linux binary!"
+      when: "'ELF 64-bit' not in eksctl_file_check.stdout"
+
 - name: "Check if eksctl-anywhere exists"
   ansible.builtin.stat:
     path: /usr/local/bin/eksctl-anywhere
@@ -11,6 +52,12 @@
         url: "https://github.com/aws/eks-anywhere/releases/download/v0.23.1/eksctl-anywhere-v0.23.1-linux-amd64.tar.gz"
         dest: /tmp/eks-a.tar.gz
         mode: '0644'
+
+    - name: "Ensure /tmp/eks-a directory exists"
+      ansible.builtin.file:
+        path: /tmp/eks-a
+        state: directory
+        mode: '0755'
 
     - name: "Extract eksctl-anywhere binary"
       ansible.builtin.unarchive:
@@ -40,5 +87,12 @@
         msg: "Downloaded eksctl-anywhere is not a valid Linux binary!"
       when: "'ELF 64-bit' not in eksa_file_check.stdout"
 
-- name: "Include EKS-A cluster creation tasks"
-  ansible.builtin.include_tasks: create_cluster.yaml
+- name: "Include image builder tasks"
+  ansible.builtin.include_role:
+    name: image_builder
+
+- name: "Create EKS-A cluster"
+  ansible.builtin.command:
+    cmd: "eksctl anywhere create cluster -f {{ build_dir }}/cluster.yaml"
+  delegate_to: localhost
+  run_once: true

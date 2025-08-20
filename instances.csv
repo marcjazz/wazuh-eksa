@@ -1,0 +1,6 @@
+hostname,bmc_ip,bmc_username,bmc_password,mac,ip_address,netmask,gateway,nameservers,labels,disk
+eksa-0,,,,42:01:0a:02:00:05,10.2.0.5,10.2.0.0/16,10.2.0.1,8.8.8.8,type=wk,/dev/sda
+eksa-1,,,,42:01:0a:02:00:06,10.2.0.6,10.2.0.0/16,10.2.0.1,8.8.8.8,type=wk,/dev/sda
+eksa-2,,,,42:01:0a:02:00:07,10.2.0.7,10.2.0.0/16,10.2.0.1,8.8.8.8,type=cp,/dev/sda
+eksa-3,,,,42:01:0a:02:00:08,10.2.0.8,10.2.0.0/16,10.2.0.1,8.8.8.8,type=cp,/dev/sda
+eksa-4,,,,42:01:0a:02:00:09,10.2.0.9,10.2.0.0/16,10.2.0.1,8.8.8.8,type=cp,/dev/sda
