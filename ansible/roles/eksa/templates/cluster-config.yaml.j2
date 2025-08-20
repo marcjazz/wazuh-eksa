@@ -25,14 +25,6 @@ spec:
   workerNodeGroupConfigurations:
   - count: 1
     name: md-0
-  # Add storage configuration
-  storage:
-    storageClass:
-      name: standard
-      default: true
-    csiDriver:
-      name: local-path-provisioner
-      namespace: local-path-storage
 
 ---
 apiVersion: anywhere.eks.amazonaws.com/v1alpha1

@@ -3,5 +3,6 @@ cluster_name: "wazuh-eksa-cluster"
 cluster_config_path: "/home/{{ ansible_user }}/{{ cluster_name }}.yaml"
 delete_cluster: false
 delete_strategy: "soft" # "soft" or "force"
-kubernetes_version: "1.28"
+kubernetes_version: "1.33"
 eksa_provider: "docker" # Default provider, can be overridden
+license_token: "[YOUR_LICENSE_TOKEN]" # Required for extended Kubernetes support

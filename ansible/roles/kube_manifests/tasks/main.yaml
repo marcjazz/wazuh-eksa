@@ -1,6 +1,6 @@
 ---
 - name: Wait for cert-manager deployments to be ready
-  community.kubernetes.k8s_info:
+  kubernetes.core.k8s_info:
     api_version: apps/v1
     kind: Deployment
     name: "{{ item }}"
@@ -26,5 +26,8 @@
   delay: 15
 
 - name: Apply remaining infrastructure manifests
-  community.kubernetes.kustomize:
-    path: "{{ playbook_dir }}/files/apps/infrastructure"
+  kubernetes.core.k8s:
+    state: present
+    wait: true
+    server_side_apply: true
+    kustomize: "{{ playbook_dir }}/files/apps/infrastructure"

@@ -1,9 +1,9 @@
 ---
 - name: Wait for Wazuh secrets to be created by external-secrets
-  community.kubernetes.k8s_info:
+  kubernetes.core.k8s_info:
     api_version: v1
     kind: Secret
-    name: "{{ item }}"
+    name: '{{ item }}'
     namespace: wazuh
   register: secret_info
   until: secret_info.resources | length > 0
@@ -19,15 +19,18 @@
 - name: Add Wazuh Helm repository
   community.kubernetes.helm_repository:
     name: wazuh
-    repo_url: "https://chartmuseum.wazuh.adorsys.team"
-    repo_username: "{{ wazuh_helm_username }}"
-    repo_password: "{{ wazuh_helm_password }}"
+    repo_url: 'https://chartmuseum.wazuh.adorsys.team'
+    repo_username: '{{ wazuh_helm_username }}'
+    repo_password: '{{ wazuh_helm_password }}'
+    state: present
+    force_update: true
+  no_log: true
 
 - name: Deploy Wazuh from Helm chart
-  community.kubernetes.helm:
-    name: "wazuh-{{ wazuh_environment }}"
+  kubernetes.core.helm:
+    name: 'wazuh-{{ wazuh_environment }}'
     chart_ref: wazuh/wazuh-helm
-    chart_version: "0.2.25"
+    chart_version: '0.2.25'
     release_namespace: wazuh
     create_namespace: true
     values: "{{ lookup('template', 'values.yaml.j2') | from_yaml }}"

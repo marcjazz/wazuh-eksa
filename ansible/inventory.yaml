@@ -1,6 +1,20 @@
+# Example Ansible inventory file
+# Copy this file to inventory.yaml and update with your actual values
+# DO NOT commit inventory.yaml with real credentials to version control
+
 eksa_vms:
   hosts:
     vm1:
-      ansible_host: REPLACE_WITH_YOUR_VM_IP
-      ansible_user: REPLACE_WITH_YOUR_USERNAME
-      ansible_ssh_private_key_file: REPLACE_WITH_YOUR_SSH_KEY_PATH
+      ansible_host: 10.206.168.53 # Replace with actual IP
+      ansible_user: ubuntu # Replace with actual username (e.g., ubuntu, ec2-user)
+      ansible_ssh_private_key_file: ~/.ssh/id_rsa # Replace with your actual private key path
+    # vm2:
+    #   ansible_host: YOUR_VM2_IP_ADDRESS
+    #   ansible_user: YOUR_USERNAME
+    #   ansible_ssh_private_key_file: ~/.ssh/YOUR_PRIVATE_KEY
+  vars:
+    # Common variables for all hosts
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+    ansible_python_interpreter: /usr/bin/python3
+    # Use Kubernetes version that doesn't require license
+    kubernetes_version: "1.28"
