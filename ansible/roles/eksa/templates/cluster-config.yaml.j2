@@ -31,4 +31,8 @@ apiVersion: anywhere.eks.amazonaws.com/v1alpha1
 kind: {{ eksa_provider | capitalize }}DatacenterConfig
 metadata:
   name: {{ cluster_name }}
-spec: {}
+spec:
+  {% if eksa_provider == "tinkerbell" %}
+  tinkerbellIP: "{{ tinkerbell_bootstrap_ip }}"
+  osImageURL: "{{ tinkerbell_os_image_url }}"
+  {% endif %}

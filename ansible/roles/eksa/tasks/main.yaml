@@ -40,25 +40,5 @@
         msg: "Downloaded eksctl-anywhere is not a valid Linux binary!"
       when: "'ELF 64-bit' not in eksa_file_check.stdout"
 
-- name: "Create EKS-A cluster configuration file"
-  ansible.builtin.template:
-    src: cluster-config.yaml.j2
-    dest: "/home/{{ ansible_user }}/{{ cluster_name }}-cluster.yaml"
-    mode: '0644'
-
-- name: "Create EKS-A cluster"
-  ansible.builtin.command:
-    cmd: "eksctl anywhere create cluster -f /home/{{ ansible_user }}/{{ cluster_name }}-cluster.yaml"
-  args:
-    creates: "/home/{{ ansible_user }}/.kube/config" # This assumes the kubeconfig is created here
-  register: create_cluster_output
-  changed_when: create_cluster_output.rc == 0
-
-- name: "Wait for Kubernetes cluster to be ready"
-  ansible.builtin.command:
-    cmd: "kubectl cluster-info"
-  register: cluster_info_output
-  until: cluster_info_output.rc == 0 and 'is running at' in cluster_info_output.stdout
-  retries: 30
-  delay: 10
-  changed_when: false
+- name: "Include EKS-A cluster creation tasks"
+  ansible.builtin.include_tasks: create_cluster.yaml

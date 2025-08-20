@@ -1,0 +1,4 @@
+hostname,ip,mac
+{% for vm in gcp_vms %}
+{{ vm.hostname }},{{ vm.ip }},{{ vm.mac }}
+{% endfor %}
