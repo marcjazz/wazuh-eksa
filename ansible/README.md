@@ -145,7 +145,7 @@ ansible -i inventory.ini cp:workers -a "ip -o link show" -u ubuntu
 Reserve an internal static IP in the VPC (example):
 
 ```bash
-gcloud compute addresses create mgmt-cp-endpoint --region=us-central1 --subnet=my-subnet --addresses=10.2.0.9 --purpose=VPC_PEERING
+gcloud compute addresses create mgmt-cp-endpoint --region=us-central1 --subnet=my-subnet --addresses=10.2.0.9
 ```
 
 Reserve the Tinkerbell IP similarly (use your network/subnet). Alternatively, assign static internal IPs during VM creation in the GCP console or with `gcloud compute instances create` using `--private-network-ip`.

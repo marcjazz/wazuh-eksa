@@ -1,0 +1,10 @@
+---
+- name: Setup Admin VM for EKS Anywhere
+  hosts: cp
+  become: true
+  tasks:
+  roles:
+    - role: common
+    - role: docker
+    - role: eksa
+    - role: image_builder

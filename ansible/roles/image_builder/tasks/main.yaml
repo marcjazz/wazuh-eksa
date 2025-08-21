@@ -1,41 +1,93 @@
-- name: Install image-builder dependencies
-  ansible.builtin.apt:
-    name:
-      - qemu-utils
-      - kpartx
-      - parted
-      - dosfstools
-      - e2fsprogs
-      - cloud-image-utils
-    state: present
-  become: true
+---
+- name: Check if image-builder exists
+  ansible.builtin.stat:
+    path: /usr/local/bin/image-builder
+  register: image_builder_stat
 
-- name: Download OS image
-  ansible.builtin.get_url:
-    url: "{{ osImageURL }}"
-    dest: "/tmp/base-os.qcow2"
-    mode: '0644'
+- name: Install image-builder from latest EKS-A release
+  block:
+    - name: Fetch EKS-A manifest
+      ansible.builtin.uri:
+        url: https://anywhere-assets.eks.amazonaws.com/releases/eks-a/manifest.yaml
+        return_content: true
+      register: eksa_manifest
 
-- name: Build OS image
-  ansible.builtin.command: |
-    image-builder build \
-      --os-image /tmp/base-os.qcow2 \
-      --output-dir /tmp/built-image \
-      --nameservers "{{ nameservers }}" \
-      --disk "{{ disk }}"
-  args:
-    creates: /tmp/built-image/eksa-os.qcow2
+    - name: Extract bundle manifest URLs
+      ansible.builtin.command: |
+        /usr/bin/yq -r '.spec.releases[] | select(.bundleManifestUrl != null) | .bundleManifestUrl'
+      args:
+        stdin: "{{ eksa_manifest.content }}"
+      register: bundle_urls
+      failed_when: bundle_urls.rc != 0
 
-- name: Make built OS image accessible via web server
-  ansible.builtin.copy:
-    src: /tmp/built-image/eksa-os.qcow2
-    dest: /var/www/html/eksa-os.qcow2
-    mode: '0644'
-  become: true
+    - name: Find latest bundle manifest with imagebuilder
+      ansible.builtin.shell: |
+        set -e
+        for url in {{ bundle_urls.stdout_lines | join(' ') }}; do
+          if curl -s "$url" | /usr/bin/yq -e '.spec.versionsBundles[0].eksD.imagebuilder.uri' >/dev/null; then
+            echo "$url"
+          fi
+        done | tail -n1
+      register: bundle_manifest_url
+      failed_when: bundle_manifest_url.rc != 0
 
-- name: Ensure web server is running
-  ansible.builtin.service:
-    name: apache2
-    state: started
-    enabled: true
+    - name: Fail if no imagebuilder bundle was found
+      ansible.builtin.fail:
+        msg: "No valid EKS-A release found with imagebuilder"
+      when: bundle_manifest_url.stdout == ""
+
+    - name: Extract imagebuilder tarball URI
+      ansible.builtin.shell:
+        cmd: "curl -s {{ bundle_manifest_url.stdout }} | /usr/bin/yq -r '.spec.versionsBundles[0].eksD.imagebuilder.uri'"
+      register: imagebuilder_tarball_uri
+      failed_when: imagebuilder_tarball_uri.rc != 0
+
+    - name: Fail if tarball URI is empty
+      ansible.builtin.fail:
+        msg: "Imagebuilder tarball URI not found in {{ bundle_manifest_url.stdout }}"
+      when: imagebuilder_tarball_uri.stdout == ""
+
+    - name: Download image-builder tarball
+      ansible.builtin.get_url:
+        url: "{{ imagebuilder_tarball_uri.stdout }}"
+        dest: /tmp/image-builder.tar.gz
+        mode: '0644'
+      register: download_result
+      become: true
+
+    - name: Extract image-builder binary
+      ansible.builtin.unarchive:
+        src: /tmp/image-builder.tar.gz
+        dest: /tmp/
+        remote_src: yes
+        extra_opts:
+          - --strip-components=1
+      register: unarchive_result
+      become: true
+
+    - name: Verify extracted image-builder binary exists
+      ansible.builtin.stat:
+        path: /tmp/image-builder
+      register: extracted_binary
+
+    - name: Fail if extracted binary is missing
+      ansible.builtin.fail:
+        msg: "Extracted image-builder binary not found at /tmp/image-builder"
+      when: not extracted_binary.stat.exists
+
+    - name: Install image-builder binary
+      ansible.builtin.copy:
+        src: /tmp/image-builder
+        dest: /usr/local/bin/image-builder
+        mode: '0755'
+        remote_src: yes
+      become: true
+
+    - name: Clean up temporary image-builder binary
+      ansible.builtin.file:
+        path: /tmp/image-builder
+        state: absent
+      become: true
+
+  when: not image_builder_stat.stat.exists
   become: true

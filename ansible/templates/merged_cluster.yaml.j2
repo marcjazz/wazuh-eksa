@@ -16,7 +16,6 @@ spec:
     count: 3
     endpoint:
       host: "{{ control_plane_endpoint }}"
-      port: 6443
     machineGroupRef:
       kind: TinkerbellMachineConfig
       name: {{ cluster_name }}-cp

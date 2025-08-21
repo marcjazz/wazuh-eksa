@@ -2,6 +2,7 @@
   ansible.builtin.stat:
     path: /usr/local/bin/eksctl
   register: eksctl_stat
+  run_once: true
 
 - name: "Install eksctl"
   when: not eksctl_stat.stat.exists
@@ -91,8 +92,20 @@
   ansible.builtin.include_role:
     name: image_builder
 
+- name: "Generate hardware.csv"
+  ansible.builtin.template:
+    src: ../../templates/hardware.csv.j2
+    dest: "/tmp/hardware.csv"
+    mode: '0644'
+
+- name: "Generate cluster.yaml"
+  ansible.builtin.template:
+    src: ../../templates/merged_cluster.yaml.j2
+    dest: "/tmp/cluster.yaml"
+    mode: '0644'
+
 - name: "Create EKS-A cluster"
+  become: true
   ansible.builtin.command:
-    cmd: "eksctl anywhere create cluster -f {{ build_dir }}/cluster.yaml"
-  delegate_to: localhost
+    cmd: "eksctl anywhere create cluster -f /tmp/cluster.yaml --hardware-csv /tmp/hardware.csv"
   run_once: true
