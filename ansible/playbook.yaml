@@ -7,4 +7,3 @@
     - role: common
     - role: docker
     - role: eksa
-    - role: image_builder

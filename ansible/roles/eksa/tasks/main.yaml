@@ -1,111 +1,134 @@
-- name: "Check if eksctl exists"
+- name: 'Check if eksctl exists'
   ansible.builtin.stat:
     path: /usr/local/bin/eksctl
   register: eksctl_stat
   run_once: true
 
-- name: "Install eksctl"
+- name: 'Install eksctl'
   when: not eksctl_stat.stat.exists
   block:
-    - name: "Download eksctl (Linux amd64)"
+    - name: 'Download eksctl (Linux amd64)'
       ansible.builtin.get_url:
-        url: "https://github.com/eksctl-io/eksctl/releases/download/v0.180.0/eksctl_Linux_amd64.tar.gz"
+        url: 'https://github.com/eksctl-io/eksctl/releases/download/v0.180.0/eksctl_Linux_amd64.tar.gz'
         dest: /tmp/eksctl.tar.gz
         mode: '0644'
 
-    - name: "Extract eksctl binary"
+    - name: 'Extract eksctl binary'
       ansible.builtin.unarchive:
         src: /tmp/eksctl.tar.gz
         dest: /tmp
         remote_src: true
 
-    - name: "Move eksctl binary to /usr/local/bin"
+    - name: 'Move eksctl binary to /usr/local/bin'
       ansible.builtin.command:
         cmd: mv /tmp/eksctl /usr/local/bin/eksctl
       args:
         creates: /usr/local/bin/eksctl
 
-    - name: "Ensure eksctl is executable"
+    - name: 'Ensure eksctl is executable'
       ansible.builtin.file:
         path: /usr/local/bin/eksctl
         mode: '0755'
         state: file
 
-    - name: "Verify eksctl binary"
+    - name: 'Verify eksctl binary'
       ansible.builtin.command: file /usr/local/bin/eksctl
       register: eksctl_file_check
 
-    - name: "Fail if eksctl binary is not Linux ELF"
+    - name: 'Fail if eksctl binary is not Linux ELF'
       ansible.builtin.fail:
-        msg: "Downloaded eksctl is not a valid Linux binary!"
+        msg: 'Downloaded eksctl is not a valid Linux binary!'
       when: "'ELF 64-bit' not in eksctl_file_check.stdout"
 
-- name: "Check if eksctl-anywhere exists"
+- name: 'Check if eksctl-anywhere exists'
   ansible.builtin.stat:
     path: /usr/local/bin/eksctl-anywhere
   register: eksa_stat
 
-- name: "Install eksctl-anywhere"
+- name: 'Install eksctl-anywhere'
   when: not eksa_stat.stat.exists
   block:
-    - name: "Download eksctl-anywhere (Linux amd64)"
+    - name: 'Download eksctl-anywhere (Linux amd64)'
       ansible.builtin.get_url:
-        url: "https://github.com/aws/eks-anywhere/releases/download/v0.23.1/eksctl-anywhere-v0.23.1-linux-amd64.tar.gz"
+        url: 'https://github.com/aws/eks-anywhere/releases/download/v0.23.1/eksctl-anywhere-v0.23.1-linux-amd64.tar.gz'
         dest: /tmp/eks-a.tar.gz
         mode: '0644'
 
-    - name: "Ensure /tmp/eks-a directory exists"
+    - name: 'Ensure /tmp/eks-a directory exists'
       ansible.builtin.file:
         path: /tmp/eks-a
         state: directory
         mode: '0755'
 
-    - name: "Extract eksctl-anywhere binary"
+    - name: 'Extract eksctl-anywhere binary'
       ansible.builtin.unarchive:
         src: /tmp/eks-a.tar.gz
         dest: /tmp/eks-a
         remote_src: true
         extra_opts: [--strip-components=0]
 
-    - name: "Move eksctl-anywhere binary to /usr/local/bin"
+    - name: 'Move eksctl-anywhere binary to /usr/local/bin'
       ansible.builtin.command:
         cmd: mv /tmp/eks-a/eksctl-anywhere /usr/local/bin/eksctl-anywhere
       args:
         creates: /usr/local/bin/eksctl-anywhere
 
-    - name: "Ensure eksctl-anywhere is executable"
+    - name: 'Ensure eksctl-anywhere is executable'
       ansible.builtin.file:
         path: /usr/local/bin/eksctl-anywhere
         mode: '0755'
         state: file
 
-    - name: "Verify eksctl-anywhere binary"
+    - name: 'Verify eksctl-anywhere binary'
       ansible.builtin.command: file /usr/local/bin/eksctl-anywhere
       register: eksa_file_check
 
-    - name: "Fail if binary is not Linux ELF"
+    - name: 'Fail if binary is not Linux ELF'
       ansible.builtin.fail:
-        msg: "Downloaded eksctl-anywhere is not a valid Linux binary!"
+        msg: 'Downloaded eksctl-anywhere is not a valid Linux binary!'
       when: "'ELF 64-bit' not in eksa_file_check.stdout"
 
-- name: "Include image builder tasks"
-  ansible.builtin.include_role:
-    name: image_builder
-
-- name: "Generate hardware.csv"
+- name: 'Generate hardware.csv'
   ansible.builtin.template:
     src: ../../templates/hardware.csv.j2
-    dest: "/tmp/hardware.csv"
+    dest: '/tmp/hardware.csv'
     mode: '0644'
 
-- name: "Generate cluster.yaml"
+- name: Ensure OS image is present on remote machine
+  block:
+    - name: Ensure remote image directory exists
+      ansible.builtin.file:
+        path: '{{ remote_image_path }}'
+        state: directory
+        mode: '0755'
+
+    - name: Copy built image to remote machine with progress
+      ansible.posix.synchronize:
+        src: "{{ local_image_path }}"
+        dest: "{{ remote_image_path }}"
+        rsync_opts:
+          - "--progress"
+
+
+    - name: Start Python HTTP server to serve the image
+      ansible.builtin.shell: |
+        # Check if server is already running
+        if ! lsof -i:{{ image_server_port }} | grep python3; then
+          python3 -m http.server {{ image_server_port }} --directory "{{ remote_image_path | dirname }}" > /var/log/image-server.log 2>&1 &
+        fi
+      args:
+        executable: /bin/bash
+      async: 0
+      poll: 0
+
+- name: 'Generate cluster.yaml'
   ansible.builtin.template:
     src: ../../templates/merged_cluster.yaml.j2
-    dest: "/tmp/cluster.yaml"
+    dest: '/tmp/cluster.yaml'
     mode: '0644'
 
-- name: "Create EKS-A cluster"
+- name: 'Create EKS-A cluster'
   become: true
   ansible.builtin.command:
-    cmd: "eksctl anywhere create cluster -f /tmp/cluster.yaml --hardware-csv /tmp/hardware.csv"
+    cmd: 'eksctl anywhere create cluster -f /tmp/cluster.yaml --hardware-csv /tmp/hardware.csv'
   run_once: true

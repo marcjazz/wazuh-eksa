@@ -1,0 +1,100 @@
+
+PLAY [Setup Admin VM for EKS Anywhere] *****************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [vm1]
+
+TASK [common : Install common required packages] *******************************
+ok: [vm1]
+
+TASK [common : Install or upgrade Ansible to required version using pip3] ******
+ok: [vm1]
+
+TASK [common : Download & Install yq binary] ***********************************
+ok: [vm1]
+
+TASK [common : Ensure image-builder user exists and is in sudo & kvm groups] ***
+ok: [vm1]
+
+TASK [common : Check if KVM module is loaded] **********************************
+ok: [vm1]
+
+TASK [common : Load KVM kernel module (kvm_intel) if not loaded] ***************
+skipping: [vm1]
+
+TASK [common : Load KVM kernel module (kvm_amd) if not loaded] *****************
+skipping: [vm1]
+
+TASK [common : Check if /dev/kvm exists] ***************************************
+ok: [vm1]
+
+TASK [common : Fix /dev/kvm permissions] ***************************************
+skipping: [vm1]
+
+TASK [common : Adjust SSH config to allow ssh-rsa] *****************************
+ok: [vm1]
+
+TASK [docker : Add Docker's official GPG key] **********************************
+ok: [vm1]
+
+TASK [docker : Add Docker repository] ******************************************
+ok: [vm1]
+
+TASK [docker : Install Docker Engine] ******************************************
+ok: [vm1]
+
+TASK [docker : Add user to docker group] ***************************************
+ok: [vm1]
+
+TASK [eksa : Check if eksctl exists] *******************************************
+ok: [vm1]
+
+TASK [eksa : Download eksctl (Linux amd64)] ************************************
+skipping: [vm1]
+
+TASK [eksa : Extract eksctl binary] ********************************************
+skipping: [vm1]
+
+TASK [eksa : Move eksctl binary to /usr/local/bin] *****************************
+skipping: [vm1]
+
+TASK [eksa : Ensure eksctl is executable] **************************************
+skipping: [vm1]
+
+TASK [eksa : Verify eksctl binary] *********************************************
+skipping: [vm1]
+
+TASK [eksa : Fail if eksctl binary is not Linux ELF] ***************************
+skipping: [vm1]
+
+TASK [eksa : Check if eksctl-anywhere exists] **********************************
+ok: [vm1]
+
+TASK [eksa : Download eksctl-anywhere (Linux amd64)] ***************************
+skipping: [vm1]
+
+TASK [eksa : Ensure /tmp/eks-a directory exists] *******************************
+skipping: [vm1]
+
+TASK [eksa : Extract eksctl-anywhere binary] ***********************************
+skipping: [vm1]
+
+TASK [eksa : Move eksctl-anywhere binary to /usr/local/bin] ********************
+skipping: [vm1]
+
+TASK [eksa : Ensure eksctl-anywhere is executable] *****************************
+skipping: [vm1]
+
+TASK [eksa : Verify eksctl-anywhere binary] ************************************
+skipping: [vm1]
+
+TASK [eksa : Fail if binary is not Linux ELF] **********************************
+skipping: [vm1]
+
+TASK [eksa : Generate hardware.csv] ********************************************
+ok: [vm1]
+
+TASK [eksa : Ensure remote image directory exists] *****************************
+changed: [vm1]
+
+TASK [eksa : Copy built image to remote machine] *******************************

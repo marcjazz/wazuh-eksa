@@ -38,7 +38,7 @@ metadata:
   name: {{ cluster_name }}
 spec:
   tinkerbellIP: "{{ tinkerbell_ip }}"
-  osImageURL: "http://{{ hostvars[groups['all'][0]]['ansible_host'] }}/eksa-os.qcow2"
+  osImageURL: "http://{{ hostvars[groups['all'][0]]['ansible_host'] }}:{{ image_server_port }}/eksa-os.qcow2"
 ---
 apiVersion: anywhere.eks.amazonaws.com/v1alpha1
 kind: TinkerbellMachineConfig

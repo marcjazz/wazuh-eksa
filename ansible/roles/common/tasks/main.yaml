@@ -1,28 +1,82 @@
 ---
-- name: Install prerequisites for Docker repository
+- name: Install common required packages
   ansible.builtin.apt:
     name:
-      - apt-transport-https
-      - ca-certificates
-      - curl
-      - gnupg
-      - yq
+      - jq
+      - make
+      - python3-pip
+      - qemu-kvm
+      - libvirt-daemon-system
+      - libvirt-clients
+      - virtinst
+      - cpu-checker
+      - libguestfs-tools
+      - libosinfo-bin
+      - unzip
+      - bc
     state: present
-    update_cache: true
+    update_cache: yes
 
-- name: Install yq
-  ansible.builtin.shell:
-    cmd: apt-get install -y yq
-  become: true
+- name: Install or upgrade Ansible to required version using pip3
+  ansible.builtin.pip:
+    name:
+      - ansible-core==2.15.13
+      - ansible
+    state: present
+    executable: pip3
+    extra_args: "--break-system-packages"
 
-# - name: Download Helm install script
-#   ansible.builtin.get_url:
-#     url: https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
-#     dest: /tmp/get_helm.sh
-#     mode: '0700'
+- name: Download & Install yq binary
+  ansible.builtin.get_url:
+    url: https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64
+    dest: /usr/bin/yq
+    mode: '0755'
 
-# - name: Run Helm install script
-#   ansible.builtin.command:
-#     cmd: /tmp/get_helm.sh
-#   args:
-#     creates: /usr/local/bin/helm
+- name: Ensure image-builder user exists and is in sudo & kvm groups
+  ansible.builtin.user:
+    name: image-builder
+    groups: "sudo,kvm"
+    append: yes
+    create_home: yes
+
+- name: Check if KVM module is loaded
+  ansible.builtin.command: lsmod | grep kvm
+  register: kvm_module_status
+  changed_when: false
+  failed_when: false
+
+- name: Load KVM kernel module (kvm_intel) if not loaded
+  ansible.builtin.modprobe:
+    name: kvm_intel
+    state: present
+  when: kvm_module_status.rc != 0 and ansible_architecture == 'x86_64' and 'Intel' in ansible_processor
+
+- name: Load KVM kernel module (kvm_amd) if not loaded
+  ansible.builtin.modprobe:
+    name: kvm_amd
+    state: present
+  when: kvm_module_status.rc != 0 and ansible_architecture == 'x86_64' and 'AMD' in ansible_processor
+
+- name: Check if /dev/kvm exists
+  ansible.builtin.stat:
+    path: /dev/kvm
+  register: kvm_device_status
+
+- name: Fix /dev/kvm permissions
+  ansible.builtin.file:
+    path: /dev/kvm
+    mode: '666'
+    owner: root
+    group: kvm
+  when: kvm_device_status.stat.exists
+
+- name: Adjust SSH config to allow ssh-rsa
+  ansible.builtin.blockinfile:
+    path: "/home/image-builder/.ssh/config"
+    create: yes
+    owner: image-builder
+    group: image-builder
+    mode: '0600'
+    block: |
+      HostKeyAlgorithms +ssh-rsa
+      PubkeyAcceptedKeyTypes +ssh-rsa
