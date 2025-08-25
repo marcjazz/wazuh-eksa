@@ -38,7 +38,7 @@ metadata:
   name: {{ cluster_name }}
 spec:
   tinkerbellIP: "{{ tinkerbell_ip }}"
-  osImageURL: "http://{{ hostvars[groups['all'][0]]['ansible_host'] }}:{{ image_server_port }}/eksa-os.qcow2"
+  osImageURL: "http://{{ hostvars[groups['all'][0]]['ansible_host'] }}:{{ image_server_port }}/ubuntu-2204-kube-1-33.gz"
 ---
 apiVersion: anywhere.eks.amazonaws.com/v1alpha1
 kind: TinkerbellMachineConfig
@@ -48,7 +48,9 @@ spec:
   hardwareSelector:
     type: cp
   osFamily: ubuntu
-  templateRef: {}
+  templateRef:
+    kind: TinkerbellTemplateConfig
+    name: {{ cluster_name }}
   users:
   - name: {{ machine_user }}
     sshAuthorizedKeys:
@@ -76,3 +78,11 @@ metadata:
   name: {{ cluster_name }}
 spec:
   osImageURL: "{{ os_image_url }}"
+  template:
+    name: {{ cluster_name }}-template
+    tasks:
+    {%- if eksa_tinkerbell_actions is defined and eksa_tinkerbell_actions %}
+    {{- eksa_tinkerbell_actions | to_nice_yaml | indent(4) }}
+    {%- else %}
+      []
+    {%- endif %}

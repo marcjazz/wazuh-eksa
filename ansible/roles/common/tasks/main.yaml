@@ -5,7 +5,6 @@
       - jq
       - make
       - python3-pip
-      - qemu-kvm
       - libvirt-daemon-system
       - libvirt-clients
       - virtinst
@@ -14,6 +13,7 @@
       - libosinfo-bin
       - unzip
       - bc
+      - rsync
     state: present
     update_cache: yes
 
@@ -39,36 +39,13 @@
     append: yes
     create_home: yes
 
-- name: Check if KVM module is loaded
-  ansible.builtin.command: lsmod | grep kvm
-  register: kvm_module_status
-  changed_when: false
-  failed_when: false
 
-- name: Load KVM kernel module (kvm_intel) if not loaded
-  ansible.builtin.modprobe:
-    name: kvm_intel
-    state: present
-  when: kvm_module_status.rc != 0 and ansible_architecture == 'x86_64' and 'Intel' in ansible_processor
-
-- name: Load KVM kernel module (kvm_amd) if not loaded
-  ansible.builtin.modprobe:
-    name: kvm_amd
-    state: present
-  when: kvm_module_status.rc != 0 and ansible_architecture == 'x86_64' and 'AMD' in ansible_processor
-
-- name: Check if /dev/kvm exists
-  ansible.builtin.stat:
-    path: /dev/kvm
-  register: kvm_device_status
-
-- name: Fix /dev/kvm permissions
-  ansible.builtin.file:
-    path: /dev/kvm
-    mode: '666'
-    owner: root
-    group: kvm
-  when: kvm_device_status.stat.exists
+- name: Generate SSH key for image-builder user
+  ansible.builtin.user:
+    name: image-builder
+    generate_ssh_key: yes
+    ssh_key_bits: 2048
+    ssh_key_file: .ssh/id_rsa
 
 - name: Adjust SSH config to allow ssh-rsa
   ansible.builtin.blockinfile:

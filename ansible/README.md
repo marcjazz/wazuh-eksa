@@ -127,7 +127,7 @@ ansible -i inventory.ini cp:workers -a "ip -o link show" -u ubuntu
 ## Important variables to edit in `group_vars/all.yml`
 
 * `cluster_name` — cluster metadata name
-* `kubernetes_version` — e.g. `1.31`
+* `kubernetes_version` — e.g. `1.33`
 * `control_plane_endpoint` — IP that will act as cluster endpoint (reserved/static)
 * `tinkerbell_ip` — the IP for Tinkerbell API/Boots on the network
 * `ssh_pub_key` — the public key to install into machine YAMLs

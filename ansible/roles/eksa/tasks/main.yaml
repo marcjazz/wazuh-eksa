@@ -88,6 +88,13 @@
         msg: 'Downloaded eksctl-anywhere is not a valid Linux binary!'
       when: "'ELF 64-bit' not in eksa_file_check.stdout"
 
+- name: Install rsync on remote machine
+  become: true
+  ansible.builtin.apt:
+    name: rsync
+    state: present
+    update_cache: yes
+
 - name: 'Generate hardware.csv'
   ansible.builtin.template:
     src: ../../templates/hardware.csv.j2
@@ -121,11 +128,18 @@
       async: 0
       poll: 0
 
+- name: Read SSH public key
+  ansible.builtin.slurp:
+    src: /home/image-builder/.ssh/id_rsa.pub
+  register: ssh_pub_key_file
+
 - name: 'Generate cluster.yaml'
   ansible.builtin.template:
     src: ../../templates/merged_cluster.yaml.j2
     dest: '/tmp/cluster.yaml'
     mode: '0644'
+  vars:
+    ssh_pub_key: "{{ ssh_pub_key_file.content | b64decode }}"
 
 - name: 'Create EKS-A cluster'
   become: true
