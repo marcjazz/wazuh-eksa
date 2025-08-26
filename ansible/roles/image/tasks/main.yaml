@@ -1,0 +1,29 @@
+---
+# Tasks for image role
+
+- name: Ensure OS image is present on remote machine
+  block:
+    - name: Ensure remote image directory exists
+      ansible.builtin.file:
+        path: '{{ remote_image_path }}'
+        state: directory
+        mode: '0755'
+
+    - name: Copy built image to remote machine with progress
+      ansible.posix.synchronize:
+        src: "{{ local_image_path }}"
+        dest: "{{ remote_image_path }}"
+        rsync_opts:
+          - "--progress"
+
+
+    - name: Start Python HTTP server to serve the image
+      ansible.builtin.shell: |
+        # Check if server is already running
+        if ! lsof -i:{{ image_server_port }} | grep python3; then
+          python3 -m http.server {{ image_server_port }} --directory "{{ remote_image_path | dirname }}" > /var/log/image-server.log 2>&1 &
+        fi
+      args:
+        executable: /bin/bash
+      async: 0
+      poll: 0

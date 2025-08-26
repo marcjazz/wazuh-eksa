@@ -77,7 +77,7 @@ kind: TinkerbellTemplateConfig
 metadata:
   name: {{ cluster_name }}
 spec:
-  osImageURL: "{{ os_image_url }}"
+  osImageURL: "http://{{ hostvars[groups['all'][0]]['ansible_host'] }}:{{ image_server_port }}/ubuntu-2204-kube-1-33.gz"
   template:
     name: {{ cluster_name }}-template
     tasks:

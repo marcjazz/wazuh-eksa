@@ -1,3 +1,6 @@
+---
+# Tasks for admin role
+
 - name: 'Check if eksctl exists'
   ansible.builtin.stat:
     path: /usr/local/bin/eksctl
@@ -88,61 +91,32 @@
         msg: 'Downloaded eksctl-anywhere is not a valid Linux binary!'
       when: "'ELF 64-bit' not in eksa_file_check.stdout"
 
+- name: 'Check if kubectl exists'
+  ansible.builtin.stat:
+    path: /usr/local/bin/kubectl
+  register: kubectl_stat
+
+- name: 'Install kubectl'
+  when: not kubectl_stat.stat.exists
+  block:
+    - name: 'Download kubectl binary'
+      ansible.builtin.get_url:
+        url: "https://dl.k8s.io/release/v1.31.0/bin/linux/amd64/kubectl"
+        dest: /usr/local/bin/kubectl
+        mode: '0755'
+
+    - name: 'Verify kubectl binary'
+      ansible.builtin.command: file /usr/local/bin/kubectl
+      register: kubectl_file_check
+
+    - name: 'Fail if kubectl binary is not Linux ELF'
+      ansible.builtin.fail:
+        msg: 'Downloaded kubectl is not a valid Linux binary!'
+      when: "'ELF 64-bit' not in kubectl_file_check.stdout"
+
 - name: Install rsync on remote machine
   become: true
   ansible.builtin.apt:
     name: rsync
     state: present
     update_cache: yes
-
-- name: 'Generate hardware.csv'
-  ansible.builtin.template:
-    src: ../../templates/hardware.csv.j2
-    dest: '/tmp/hardware.csv'
-    mode: '0644'
-
-- name: Ensure OS image is present on remote machine
-  block:
-    - name: Ensure remote image directory exists
-      ansible.builtin.file:
-        path: '{{ remote_image_path }}'
-        state: directory
-        mode: '0755'
-
-    - name: Copy built image to remote machine with progress
-      ansible.posix.synchronize:
-        src: "{{ local_image_path }}"
-        dest: "{{ remote_image_path }}"
-        rsync_opts:
-          - "--progress"
-
-
-    - name: Start Python HTTP server to serve the image
-      ansible.builtin.shell: |
-        # Check if server is already running
-        if ! lsof -i:{{ image_server_port }} | grep python3; then
-          python3 -m http.server {{ image_server_port }} --directory "{{ remote_image_path | dirname }}" > /var/log/image-server.log 2>&1 &
-        fi
-      args:
-        executable: /bin/bash
-      async: 0
-      poll: 0
-
-- name: Read SSH public key
-  ansible.builtin.slurp:
-    src: /home/image-builder/.ssh/id_rsa.pub
-  register: ssh_pub_key_file
-
-- name: 'Generate cluster.yaml'
-  ansible.builtin.template:
-    src: ../../templates/merged_cluster.yaml.j2
-    dest: '/tmp/cluster.yaml'
-    mode: '0644'
-  vars:
-    ssh_pub_key: "{{ ssh_pub_key_file.content | b64decode }}"
-
-- name: 'Create EKS-A cluster'
-  become: true
-  ansible.builtin.command:
-    cmd: 'eksctl anywhere create cluster -f /tmp/cluster.yaml --hardware-csv /tmp/hardware.csv'
-  run_once: true

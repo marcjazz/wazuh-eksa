@@ -14,4 +14,6 @@
   roles:
     - role: common
     - role: docker
-    - role: eksa
+    - role: admin
+    - role: image
+    - role: cluster

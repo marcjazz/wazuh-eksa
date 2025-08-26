@@ -32,27 +32,19 @@
     dest: /usr/bin/yq
     mode: '0755'
 
-- name: Ensure image-builder user exists and is in sudo & kvm groups
+- name: "Generate SSH key for {{ machine_user }} user"
   ansible.builtin.user:
-    name: image-builder
-    groups: "sudo,kvm"
-    append: yes
-    create_home: yes
-
-
-- name: Generate SSH key for image-builder user
-  ansible.builtin.user:
-    name: image-builder
+    name: "{{ machine_user }}"
     generate_ssh_key: yes
     ssh_key_bits: 2048
     ssh_key_file: .ssh/id_rsa
 
 - name: Adjust SSH config to allow ssh-rsa
   ansible.builtin.blockinfile:
-    path: "/home/image-builder/.ssh/config"
+    path: "/home/{{ machine_user }}/.ssh/config"
     create: yes
-    owner: image-builder
-    group: image-builder
+    owner: "{{ machine_user }}"
+    group: "{{ machine_user }}"
     mode: '0600'
     block: |
       HostKeyAlgorithms +ssh-rsa
