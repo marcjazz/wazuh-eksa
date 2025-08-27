@@ -9,12 +9,11 @@
         state: directory
         mode: '0755'
 
-    - name: Copy built image to remote machine with progress
-      ansible.posix.synchronize:
+    - name: Copy built image to remote machine
+      ansible.builtin.copy:
         src: "{{ local_image_path }}"
         dest: "{{ remote_image_path }}"
-        rsync_opts:
-          - "--progress"
+        mode: '0644'
 
 
     - name: Start Python HTTP server to serve the image
@@ -27,3 +26,4 @@
         executable: /bin/bash
       async: 0
       poll: 0
+  become: true

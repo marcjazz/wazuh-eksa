@@ -3,11 +3,13 @@
   ansible.builtin.apt_key:
     url: https://download.docker.com/linux/ubuntu/gpg
     state: present
+  become: true
 
 - name: Add Docker repository
   ansible.builtin.apt_repository:
     repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu jammy stable"
     state: present
+  become: true
 
 - name: Install Docker Engine
   ansible.builtin.apt:
@@ -17,9 +19,11 @@
       - containerd.io
     state: present
     update_cache: true
+  become: true
 
 - name: "Add user to docker group"
   ansible.builtin.user:
-    name: ubuntu
+    name: "{{ ansible_user }}"
     groups: docker
-    append: true
+    append: yes
+  become: true

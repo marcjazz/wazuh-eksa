@@ -27,12 +27,14 @@
         cmd: mv /tmp/eksctl /usr/local/bin/eksctl
       args:
         creates: /usr/local/bin/eksctl
+      become: true
 
     - name: 'Ensure eksctl is executable'
       ansible.builtin.file:
         path: /usr/local/bin/eksctl
         mode: '0755'
         state: file
+      become: true
 
     - name: 'Verify eksctl binary'
       ansible.builtin.command: file /usr/local/bin/eksctl
@@ -75,12 +77,14 @@
         cmd: mv /tmp/eks-a/eksctl-anywhere /usr/local/bin/eksctl-anywhere
       args:
         creates: /usr/local/bin/eksctl-anywhere
+      become: true
 
     - name: 'Ensure eksctl-anywhere is executable'
       ansible.builtin.file:
         path: /usr/local/bin/eksctl-anywhere
         mode: '0755'
         state: file
+      become: true
 
     - name: 'Verify eksctl-anywhere binary'
       ansible.builtin.command: file /usr/local/bin/eksctl-anywhere
@@ -104,6 +108,7 @@
         url: "https://dl.k8s.io/release/v1.31.0/bin/linux/amd64/kubectl"
         dest: /usr/local/bin/kubectl
         mode: '0755'
+      become: true
 
     - name: 'Verify kubectl binary'
       ansible.builtin.command: file /usr/local/bin/kubectl

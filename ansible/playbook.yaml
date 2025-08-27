@@ -1,13 +1,4 @@
 ---
-- name: Gather facts from CP and Worker nodes
-  hosts: cp, workers
-  gather_facts: true
-  tasks:
-    - name: Ensure facts are gathered
-      ansible.builtin.setup:
-        gather_subset:
-          - network
-
 - name: Setup Admin VM for EKS Anywhere
   hosts: admin
   become: true
@@ -17,3 +8,4 @@
     - role: admin
     - role: image
     - role: cluster
+

@@ -9,7 +9,7 @@
 
 - name: Read SSH public key
   ansible.builtin.slurp:
-    src: /home/{{ machine_user }}/.ssh/id_rsa.pub
+    src: /home/{{ ansible_user }}/.ssh/id_rsa.pub
   register: ssh_pub_key_file
 
 - name: 'Generate cluster.yaml'

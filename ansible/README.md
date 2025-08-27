@@ -61,7 +61,7 @@ wk2 ansible_host=10.2.0.22 ansible_user=ubuntu
 ansible_ssh_private_key_file=~/.ssh/id_rsa
 ```
 
-2. Update `group_vars/all.yml` with your cluster-specific variables: `cluster_name`, `control_plane_endpoint`, `tinkerbell_ip`, `ssh_pub_key`, `os_image_url` (important), `machine_user`, etc.
+2. Update `group_vars/all.yml` with your cluster-specific variables: `cluster_name`, `control_plane_endpoint`, `tinkerbell_ip`, `ssh_pub_key`, `os_image_url` (important), `ansible_user`, etc.
 
 3. From `playbooks/` run:
 
@@ -132,7 +132,7 @@ ansible -i inventory.ini cp:workers -a "ip -o link show" -u ubuntu
 * `tinkerbell_ip` — the IP for Tinkerbell API/Boots on the network
 * `ssh_pub_key` — the public key to install into machine YAMLs
 * `os_image_url` — **replace** the placeholder with the actual OS image URL
-* `machine_user` — the user that exists on the VM (e.g., `ubuntu`)
+* `ansible_user` — the user that exists on the VM (e.g., `ubuntu`)
 * `cp_label_key` / `cp_label_value` and `wk_label_key` / `wk_label_value` — labels used in `hardware.csv` and `TinkerbellMachineConfig.hardwareSelector`
 * `build_dir` — output directory (default `./build`)
 
@@ -162,7 +162,7 @@ Reserve the Tinkerbell IP similarly (use your network/subnet). Alternatively, as
 
 * **`osImageURL` invalid or unreachable:** ensure the admin node can reach the URL and that the image format is supported by EKS-A/Tinkerbell.
 
-* **User mismatch:** if your VM user is `ubuntu` but your template uses `ec2-user`, change the `machine_user` variable.
+* **User mismatch:** if your VM user is `ubuntu` but your template uses `ec2-user`, change the `ansible_user` variable.
 
 ---
 

@@ -5,47 +5,49 @@
       - jq
       - make
       - python3-pip
-      - libvirt-daemon-system
-      - libvirt-clients
-      - virtinst
-      - cpu-checker
-      - libguestfs-tools
-      - libosinfo-bin
       - unzip
       - bc
       - rsync
+      - zsh
+      - git
     state: present
     update_cache: yes
-
-- name: Install or upgrade Ansible to required version using pip3
-  ansible.builtin.pip:
-    name:
-      - ansible-core==2.15.13
-      - ansible
-    state: present
-    executable: pip3
-    extra_args: "--break-system-packages"
+  become: true
 
 - name: Download & Install yq binary
   ansible.builtin.get_url:
     url: https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64
     dest: /usr/bin/yq
     mode: '0755'
+  become: true
 
-- name: "Generate SSH key for {{ machine_user }} user"
+- name: 'Generate SSH key for {{ ansible_user }} user'
   ansible.builtin.user:
-    name: "{{ machine_user }}"
+    name: '{{ ansible_user }}'
     generate_ssh_key: yes
     ssh_key_bits: 2048
     ssh_key_file: .ssh/id_rsa
 
 - name: Adjust SSH config to allow ssh-rsa
   ansible.builtin.blockinfile:
-    path: "/home/{{ machine_user }}/.ssh/config"
+    path: '/home/{{ ansible_user }}/.ssh/config'
     create: yes
-    owner: "{{ machine_user }}"
-    group: "{{ machine_user }}"
+    owner: '{{ ansible_user }}'
+    group: '{{ ansible_user }}'
     mode: '0600'
     block: |
       HostKeyAlgorithms +ssh-rsa
       PubkeyAcceptedKeyTypes +ssh-rsa
+
+- name: Set zsh as default shell for {{ ansible_user }}
+  ansible.builtin.user:
+    name: '{{ ansible_user }}'
+    shell: /usr/bin/zsh
+  become: true
+
+- name: Install oh-my-zsh for {{ ansible_user }}
+  ansible.builtin.shell: 'sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended'
+  args:
+    creates: '/home/{{ ansible_user }}/.oh-my-zsh'
+  become: true
+  become_user: '{{ ansible_user }}'

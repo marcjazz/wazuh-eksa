@@ -8,12 +8,12 @@ spec:
       cilium: {}
     pods:
       cidrBlocks:
-      - 192.168.0.0/16
+      - {{ pod_cidr | default("172.20.0.0/16") }}
     services:
       cidrBlocks:
-      - 10.96.0.0/12
+      - {{ service_cidr | default("10.96.0.0/12") }}
   controlPlaneConfiguration:
-    count: 3
+    count: 1
     endpoint:
       host: "{{ control_plane_endpoint }}"
     machineGroupRef:
@@ -26,11 +26,11 @@ spec:
   managementCluster:
     name: {{ cluster_name }}
   workerNodeGroupConfigurations:
-  - name: {{ cluster_name }}-workers
+  - name: {{ cluster_name }}-worker
     count: 2
     machineGroupRef:
       kind: TinkerbellMachineConfig
-      name: {{ cluster_name }}-wk
+      name: {{ cluster_name }}-worker
 ---
 apiVersion: anywhere.eks.amazonaws.com/v1alpha1
 kind: TinkerbellDatacenterConfig
@@ -38,7 +38,7 @@ metadata:
   name: {{ cluster_name }}
 spec:
   tinkerbellIP: "{{ tinkerbell_ip }}"
-  osImageURL: "http://{{ hostvars[groups['all'][0]]['ansible_host'] }}:{{ image_server_port }}/ubuntu-2204-kube-1-33.gz"
+  osImageURL: "http://{{ hostvars[groups['admin'][0]]['ansible_host'] }}:{{ image_server_port }}/ubuntu-2204-kube-1-33.gz"
 ---
 apiVersion: anywhere.eks.amazonaws.com/v1alpha1
 kind: TinkerbellMachineConfig
@@ -52,23 +52,23 @@ spec:
     kind: TinkerbellTemplateConfig
     name: {{ cluster_name }}
   users:
-  - name: {{ machine_user }}
+  - name: {{ ansible_user }}
     sshAuthorizedKeys:
     - "{{ ssh_pub_key }}"
 ---
 apiVersion: anywhere.eks.amazonaws.com/v1alpha1
 kind: TinkerbellMachineConfig
 metadata:
-  name: {{ cluster_name }}-wk
+  name: {{ cluster_name }}-worker
 spec:
   hardwareSelector:
-    type: wk
+    type: worker
   osFamily: ubuntu
   templateRef:
     kind: TinkerbellTemplateConfig
     name: {{ cluster_name }}
   users:
-  - name: {{ machine_user }}
+  - name: {{ ansible_user }}
     sshAuthorizedKeys:
     - "{{ ssh_pub_key }}"
 ---
@@ -77,7 +77,7 @@ kind: TinkerbellTemplateConfig
 metadata:
   name: {{ cluster_name }}
 spec:
-  osImageURL: "http://{{ hostvars[groups['all'][0]]['ansible_host'] }}:{{ image_server_port }}/ubuntu-2204-kube-1-33.gz"
+  osImageURL: "http://{{ hostvars[groups['admin'][0]]['ansible_host'] }}:{{ image_server_port }}/ubuntu-2204-kube-1-33.gz"
   template:
     name: {{ cluster_name }}-template
     tasks:

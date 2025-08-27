@@ -1,7 +1,4 @@
-hostname,bmc_ip,bmc_username,bmc_password,mac,ip_address,netmask,gateway,nameservers,labels,disk
-{% for host in groups['cp'] %}
-{{ hostvars[host].inventory_hostname }},,,,{{ hostvars[host].ansible_default_ipv4.macaddress }},{{ hostvars[host].ansible_default_ipv4.address }},{{ hostvars[host].ansible_default_ipv4.netmask | default('10.2.0.0/16') }},{{ hostvars[host].ansible_default_ipv4.gateway | default('10.2.0.1') }},{{ hostvars[host].nameservers | default('8.8.8.8') }},{{ type_label_key }}={{ cp_type_label_value }},/dev/sda
-{% endfor %}
-{% for host in groups['workers'] %}
-{{ hostvars[host].inventory_hostname }},,,,{{ hostvars[host].ansible_default_ipv4.macaddress }},{{ hostvars[host].ansible_default_ipv4.address }},{{ hostvars[host].ansible_default_ipv4.netmask | default('10.2.0.0/16') }},{{ hostvars[host].ansible_default_ipv4.gateway | default('10.2.0.1') }},{{ hostvars[host].nameservers | default('8.8.8.8') }},{{ type_label_key }}={{ wk_type_label_value }},/dev/sda
+hostname,mac,ip_address,netmask,gateway,nameservers,labels,disk
+{% for host in groups['nodes'] %}
+{{ host }},{{ hostvars[host].mac_addr }},{{ hostvars[host].ip_address }},{{ netmask }},{{ gateway }},{{ nameservers }},type={{ hostvars[host].role }},{{ disk }}
 {% endfor %}
