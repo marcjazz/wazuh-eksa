@@ -40,7 +40,6 @@ spec:
   tinkerbellIP: "{{ tinkerbell_ip }}"
   osImageURL: "http://{{ hostvars[groups['admin'][0]]['ansible_host'] }}:{{ image_server_port }}/ubuntu-2204-kube-1-33.gz"
   hookImagesURLPath: "http://{{ hostvars[groups['admin'][0]]['ansible_host'] }}:{{ image_server_port }}/hook"
-  isoBoot: false
 ---
 apiVersion: anywhere.eks.amazonaws.com/v1alpha1
 kind: TinkerbellMachineConfig
@@ -50,13 +49,6 @@ spec:
   hardwareSelector:
     type: cp
   osFamily: ubuntu
-  templateRef:
-    kind: TinkerbellTemplateConfig
-    name: {{ cluster_name }}
-  users:
-  - name: {{ ansible_user }}
-    sshAuthorizedKeys:
-    - "{{ ssh_pub_key }}"
 ---
 apiVersion: anywhere.eks.amazonaws.com/v1alpha1
 kind: TinkerbellMachineConfig
@@ -66,25 +58,3 @@ spec:
   hardwareSelector:
     type: worker
   osFamily: ubuntu
-  templateRef:
-    kind: TinkerbellTemplateConfig
-    name: {{ cluster_name }}
-  users:
-  - name: {{ ansible_user }}
-    sshAuthorizedKeys:
-    - "{{ ssh_pub_key }}"
----
-apiVersion: anywhere.eks.amazonaws.com/v1alpha1
-kind: TinkerbellTemplateConfig
-metadata:
-  name: {{ cluster_name }}
-spec:
-  osImageURL: "http://{{ hostvars[groups['admin'][0]]['ansible_host'] }}:{{ image_server_port }}/ubuntu-2204-kube-1-33.gz"
-  template:
-    name: {{ cluster_name }}-template
-    tasks:
-    {%- if eksa_tinkerbell_actions is defined and eksa_tinkerbell_actions %}
-    {{- eksa_tinkerbell_actions | to_nice_yaml | indent(4) }}
-    {%- else %}
-      []
-    {%- endif %}

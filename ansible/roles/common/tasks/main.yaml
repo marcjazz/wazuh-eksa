@@ -10,6 +10,8 @@
       - rsync
       - zsh
       - git
+      - vim
+      - nano
     state: present
     update_cache: yes
   become: true
@@ -51,3 +53,29 @@
     creates: '/home/{{ ansible_user }}/.oh-my-zsh'
   become: true
   become_user: '{{ ansible_user }}'
+
+- name: Create a directory for k9s if it does not exist
+  ansible.builtin.file:
+    path: /home/user/k9s
+    state: directory
+    mode: '0755'
+
+- name: Download and unarchive k9s
+  ansible.builtin.unarchive:
+    src: https://github.com/derailed/k9s/releases/download/v0.32.4/k9s_Linux_amd64.tar.gz
+    dest: /home/user/k9s
+    remote_src: yes
+    creates: /home/user/k9s/k9s
+
+- name: Move k9s to /usr/local/bin
+  ansible.builtin.copy:
+    src: /home/user/k9s/k9s
+    dest: /usr/local/bin/k9s
+    remote_src: yes
+    mode: '0755'
+  become: true
+
+- name: Clean up k9s directory
+  ansible.builtin.file:
+    path: /home/user/k9s
+    state: absent

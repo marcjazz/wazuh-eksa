@@ -1,6 +1,13 @@
 ---
 # Tasks for admin role
 
+- name: Install file package for binary verification
+  become: true
+  ansible.builtin.apt:
+    name: file
+    state: present
+    update_cache: yes
+
 - name: 'Check if eksctl exists'
   ansible.builtin.stat:
     path: /usr/local/bin/eksctl
