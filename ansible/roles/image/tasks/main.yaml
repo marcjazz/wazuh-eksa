@@ -5,14 +5,14 @@
   block:
     - name: Ensure remote image directory exists
       ansible.builtin.file:
-        path: '{{ remote_image_path }}'
+        path: '{{ remote_eksa_os_path }}'
         state: directory
         mode: '0755'
 
     - name: Copy built image to remote machine
       ansible.builtin.copy:
-        src: "{{ local_image_path }}"
-        dest: "{{ remote_image_path }}"
+        src: "{{ local_eksa_os_path }}"
+        dest: "{{ remote_eksa_os_path }}"
         mode: '0644'
 
 
@@ -20,7 +20,7 @@
       ansible.builtin.shell: |
         # Check if server is already running
         if ! lsof -i:{{ image_server_port }} | grep python3; then
-          python3 -m http.server {{ image_server_port }} --directory "{{ remote_image_path | dirname }}" > /var/log/image-server.log 2>&1 &
+          python3 -m http.server {{ image_server_port }} --directory "{{ remote_eksa_os_path | dirname }}" > /var/log/image-server.log 2>&1 &
         fi
       args:
         executable: /bin/bash
