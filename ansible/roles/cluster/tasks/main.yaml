@@ -7,18 +7,11 @@
     dest: '/tmp/hardware.csv'
     mode: '0644'
 
-- name: Read SSH public key
-  ansible.builtin.slurp:
-    src: /home/{{ ansible_user }}/.ssh/id_rsa.pub
-  register: ssh_pub_key_file
-
 - name: 'Generate cluster.yaml'
   ansible.builtin.template:
     src: ../../templates/merged_cluster.yaml.j2
     dest: '/tmp/cluster.yaml'
     mode: '0644'
-  vars:
-    ssh_pub_key: "{{ ssh_pub_key_file.content | b64decode }}"
 
 - name: 'Create EKS-A cluster'
   become: true

@@ -23,13 +23,6 @@
     mode: '0755'
   become: true
 
-- name: 'Generate SSH key for {{ ansible_user }} user'
-  ansible.builtin.user:
-    name: '{{ ansible_user }}'
-    generate_ssh_key: yes
-    ssh_key_bits: 2048
-    ssh_key_file: .ssh/id_rsa
-
 - name: Adjust SSH config to allow ssh-rsa
   ansible.builtin.blockinfile:
     path: '/home/{{ ansible_user }}/.ssh/config'
