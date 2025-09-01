@@ -3,6 +3,24 @@
   hosts: admin
   become: true
   pre_tasks:
+    - name: Set working directory
+      set_fact:
+        work_dir: /opt/eksa
+
+    - name: Fail if REGISTRY_PASSWORD or REGISTRY_USERNAME is not set
+      fail:
+        msg: 'The REGISTRY_PASSWORD or REGISTRY_USERNAME environment variable is not set. Please set it before running the playbook.'
+      when: lookup('env', 'REGISTRY_PASSWORD') == '' or lookup('env', 'REGISTRY_USERNAME') == ''
+
+    - name: Set registry password from environment variable
+      set_fact:
+        registry_username: "{{ lookup('env', 'REGISTRY_USERNAME') }}"
+        registry_password: "{{ lookup('env', 'REGISTRY_PASSWORD') }}"
+      tags:
+        - registry
+        - registry-auth
+        - registry-htpasswd
+    
     - name: Set airgapped_environment fact if not defined
       set_fact:
         airgapped_environment: false
@@ -20,19 +38,8 @@
     - role: common
     - role: eksctl
     - role: image
-      vars:
-        local_eksa_os_path: ../eksa-node-images/
-        remote_eksa_os_path: /opt/eks-a/os-images/
     - role: airgapped
       when: airgapped_environment
-      vars:
-        downloads_dir: /opt/eks-a/downloads
-        artifacts_tar: '{{ downloads_dir }}/eks-anywhere-artifacts.tar.gz'
-        images_tar: '{{ downloads_dir }}/eks-anywhere-images.tar.gz'
-        registry_url: "{{ hostvars[groups['admin'][0]]['ansible_host'] }}:{{ registry_mirror_port }}"
-        eksa_cli_version: v0.23.1-eks-a-103
     - role: cluster
     - role: gateway
       when: not airgapped_environment
-
-

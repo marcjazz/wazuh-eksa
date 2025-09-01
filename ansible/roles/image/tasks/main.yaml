@@ -1,5 +1,10 @@
 ---
 # Tasks for image role
+- name: Set variables for image role
+  ansible.builtin.set_fact:
+    local_eksa_os_path: ../eksa-node-images/
+    remote_eksa_os_path: '{{ work_dir }}/os-images'
+    image_server_port: '{{ image_server_port | default(8000) }}'
 
 - name: Ensure OS image is present on remote machine
   block:
@@ -11,10 +16,9 @@
 
     - name: Copy built image to remote machine
       ansible.builtin.copy:
-        src: "{{ local_eksa_os_path }}"
-        dest: "{{ remote_eksa_os_path }}"
+        src: '{{ local_eksa_os_path }}'
+        dest: '{{ remote_eksa_os_path }}'
         mode: '0644'
-
 
     - name: Start Python HTTP server to serve the image
       ansible.builtin.shell: |
