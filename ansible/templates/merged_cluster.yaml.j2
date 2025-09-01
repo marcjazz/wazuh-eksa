@@ -3,6 +3,16 @@ kind: Cluster
 metadata:
   name: {{ cluster_name }}
 spec:
+{% if airgapped_environment %}
+  registryMirrorConfiguration:
+    endpoint: "{{ hostvars[groups['admin'][0]]['ansible_host'] }}"
+    port: "{{ registry_mirror_port | default("5000") }}"
+    ociNamespaces:
+      - registry: "public.ecr.aws"
+    caCertContent: |
+      {{ ca_cert_content.content | b64decode | indent(6) }}
+    authenticate: true
+{% endif %}
   clusterNetwork:
     cniConfig:
       cilium: {}

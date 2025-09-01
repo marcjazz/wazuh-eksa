@@ -1,0 +1,144 @@
+---
+- name: Run local Docker registry as mirror
+  become: true
+  docker_container:
+    name: '{{ registry_container_name }}'
+    image: registry:3
+    state: started
+    restart_policy: always
+    published_ports:
+      - '{{ registry_mirror_port }}:5000'
+    volumes:
+      - '{{ registry_data_dir }}/data:/var/lib/registry'
+      - /etc/docker/certs.d:/certs
+      - '{{ registry_data_dir }}/auth:/auth'
+    env:
+      REGISTRY_HTTP_TLS_CERTIFICATE: /certs/ca.crt
+      REGISTRY_HTTP_TLS_KEY: /certs/ca.key
+      REGISTRY_AUTH: htpasswd
+      REGISTRY_AUTH_HTPASSWD_PATH: /auth/htpasswd
+      REGISTRY_AUTH_HTPASSWD_REALM: Registry Realm
+  tags:
+    - docker
+    - registry
+    - registry-run
+
+- name: Fail if REGISTRY_PASSWORD is not set
+  fail:
+    msg: 'The REGISTRY_PASSWORD environment variable is not set. Please set it before running the playbook.'
+  when: lookup('env', 'REGISTRY_PASSWORD') == ''
+
+- name: Set registry password from environment variable
+  set_fact:
+    registry_password: "{{ lookup('env', 'REGISTRY_PASSWORD') }}"
+  tags:
+    - registry
+    - registry-auth
+    - registry-password
+
+- name: Create htpasswd file for registry
+  shell: |
+    truncate -s 0 {{ registry_data_dir }}/auth/htpasswd
+    docker run \
+    --entrypoint htpasswd \
+    httpd:2 -Bbn eksa-admin {{ registry_password }} >> {{ registry_data_dir }}/auth/htpasswd
+  become: true
+  notify: Restart registry container
+  tags:
+    - registry
+    - registry-auth
+    - registry-htpasswd
+
+- name: Create downloads directory
+  file:
+    path: '{{ downloads_dir }}'
+    state: directory
+    mode: '0755'
+
+- name: Check if EKS Anywhere artifacts tarball exists
+  stat:
+    path: '{{ artifacts_tar }}'
+  register: artifacts_tar_stat
+
+- name: Download EKS Anywhere artifacts list
+  command: eksctl anywhere download artifacts
+  args:
+    chdir: '{{ downloads_dir }}'
+  register: dl_artifacts
+  changed_when: "'downloaded' in dl_artifacts.stdout"
+  when: not artifacts_tar_stat.stat.exists
+
+- name: Find the downloaded artifacts tarball
+  find:
+    paths: '{{ downloads_dir }}'
+    patterns: 'eks-anywhere-downloads.tar.gz'
+  register: found_artifacts_tar
+  become: true
+  when: not artifacts_tar_stat.stat.exists
+
+- name: Rename artifacts tarball
+  command: 'mv {{ item.path }} {{ artifacts_tar }}'
+  with_items: '{{ found_artifacts_tar.files }}'
+  when: not artifacts_tar_stat.stat.exists and found_artifacts_tar.files | length > 0
+  become: true
+
+- name: Expand artifacts tarball
+  unarchive:
+    src: '{{ artifacts_tar }}'
+    dest: '{{ downloads_dir }}'
+    remote_src: yes
+  become: true
+
+- name: Find bundle-release.yaml
+  find:
+    paths: '{{ downloads_dir }}'
+    patterns: 'bundle-release.yaml'
+    recurse: yes
+  register: found_bundle_file
+  become: true
+
+- name: Check if EKS Anywhere images tarball exists
+  stat:
+    path: '{{ images_tar }}'
+  register: images_tar_stat
+
+- name: Download EKS Anywhere images
+  command: eksctl anywhere download images -o "{{ images_tar }}"
+  args:
+    chdir: '{{ downloads_dir }}'
+  register: dl_images
+  changed_when: "'images' in dl_images.stdout or images_tar is defined"
+  when: not images_tar_stat.stat.exists
+
+- name: Check if registry container is running
+  docker_container_info:
+    name: '{{ registry_container_name }}'
+  register: registry_info
+
+- name: Wait for registry to be available
+  wait_for:
+    host: localhost
+    port: '{{ registry_mirror_port }}'
+    timeout: 60
+  when: registry_info.container.State.Running is defined and registry_info.container.State.Running
+
+- name: Login to local registry mirror
+  shell: "echo {{ registry_password }} | docker login {{ hostvars[groups['admin'][0]]['ansible_host'] }}:{{ registry_mirror_port }} -u eksa-admin --password-stdin"
+  become: true
+  register: login_result
+  when:
+    - registry_info.container.State.Running is defined and registry_info.container.State.Running
+    - images_tar_stat.stat.exists
+
+- name: Import images into local registry mirror
+  shell: eksctl anywhere import images -i "{{ images_tar }}" -r "{{ registry_url }}" --bundles "{{ found_bundle_file.files[0].path }}" -v 6 --insecure
+  args:
+    chdir: '{{ downloads_dir }}'
+  register: import_result
+  environment: 
+    REGISTRY_USERNAME: eksa-admin
+    REGISTRY_PASSWORD: "{{ registry_password }}"
+  when:
+    - registry_info.container.State.Running is defined and registry_info.container.State.Running
+    - images_tar_stat.stat.exists
+  changed_when: "'pushed' in import_result.stdout or import_result.rc == 0"

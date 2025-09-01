@@ -10,11 +10,34 @@
 - name: 'Generate cluster.yaml'
   ansible.builtin.template:
     src: ../../templates/merged_cluster.yaml.j2
-    dest: '/tmp/cluster.yaml'
+    dest: '/tmp/{{ cluster_name }}.yaml'
     mode: '0644'
+
+- name: Find bundle-release.yaml
+  find:
+    paths: "/opt/eks-a/downloads"
+    patterns: "bundle-release.yaml"
+    recurse: yes
+  register: found_bundle_file
+  become: true
+  when: airgapped_environment
 
 - name: 'Create EKS-A cluster'
   become: true
   ansible.builtin.command:
-    cmd: 'eksctl anywhere create cluster -f /tmp/cluster.yaml --hardware-csv /tmp/hardware.csv'
+    cmd: >-
+      eksctl anywhere create cluster
+      -f /tmp/{{ cluster_name }}.yaml
+      --hardware-csv /tmp/hardware.csv
+      --bundles-override {{ found_bundle_file.files[0].path }}
+    chdir: "{{ (found_bundle_file.files[0].path | dirname) | dirname }}"
   run_once: true
+  when: airgapped_environment
+
+
+- name: 'Create EKS-A cluster (non-airgapped)'
+  become: true
+  ansible.builtin.command:
+    cmd: 'eksctl anywhere create cluster -f /tmp/{{ cluster_name }}.yaml --hardware-csv /tmp/hardware.csv'
+  run_once: true
+  when: not airgapped_environment

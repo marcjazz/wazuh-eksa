@@ -7,9 +7,68 @@
 
 - name: Add Docker repository
   ansible.builtin.apt_repository:
-    repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu jammy stable"
+    repo: 'deb [arch=amd64] https://download.docker.com/linux/ubuntu jammy stable'
     state: present
   become: true
+
+- name: Create a directory for the registry certificate
+  ansible.builtin.file:
+    path: "/etc/docker/certs.d/{{ hostvars[groups['admin'][0]]['ansible_host'] }}:{{ registry_mirror_port }}"
+    state: directory
+    mode: '0755'
+  become: true
+
+- name: Generate an OpenSSL private key
+  community.crypto.openssl_privatekey:
+    path: /etc/docker/certs.d/ca.key
+  become: true
+  register: ca_private_key
+
+- name: Generate an OpenSSL Certificate Signing Request
+  community.crypto.openssl_csr:
+    path: /etc/docker/certs.d/ca.csr
+    privatekey_path: /etc/docker/certs.d/ca.key
+    common_name: "{{ hostvars[groups['admin'][0]]['ansible_host'] }}"
+    subject_alt_name:
+      - "IP:{{ hostvars[groups['admin'][0]]['ansible_host'] }}"
+      - "DNS:{{ hostvars[groups['admin'][0]]['ansible_host'] }}"
+      - "IP:127.0.0.1"
+      - "DNS:localhost"
+  become: true
+
+- name: Generate a self-signed OpenSSL certificate
+  community.crypto.x509_certificate:
+    path: /etc/docker/certs.d/ca.crt
+    csr_path: /etc/docker/certs.d/ca.csr
+    privatekey_path: /etc/docker/certs.d/ca.key
+    provider: selfsigned
+  become: true
+
+- name: Copy the certificate to the registry's certs directory
+  copy:
+    src: /etc/docker/certs.d/ca.crt
+    dest: "/etc/docker/certs.d/{{ hostvars[groups['admin'][0]]['ansible_host'] }}:{{ registry_mirror_port }}/ca.crt"
+    remote_src: true
+  become: true
+  notify: restart docker
+
+- name: Install ca-certificates
+  apt:
+    name: ca-certificates
+    state: present
+    update_cache: yes
+  become: true
+
+- name: Update CA certificates
+  command: update-ca-certificates
+  become: true
+  changed_when: true
+  notify: restart docker
+
+- name: Register ca cert content
+  slurp:
+    src: /etc/docker/certs.d/ca.crt
+  register: ca_cert_content
 
 - name: Install Docker Engine
   ansible.builtin.apt:
@@ -21,9 +80,9 @@
     update_cache: true
   become: true
 
-- name: "Add user to docker group"
+- name: 'Add user to docker group'
   ansible.builtin.user:
-    name: "{{ ansible_user }}"
+    name: '{{ ansible_user }}'
     groups: docker
     append: yes
   become: true

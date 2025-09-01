@@ -2,10 +2,37 @@
 - name: Setup Admin VM for EKS Anywhere
   hosts: admin
   become: true
+  pre_tasks:
+    - name: Set airgapped_environment fact if not defined
+      set_fact:
+        airgapped_environment: false
+      when: airgapped_environment is not defined
+
+    - name: Include docker role for airgapped environments
+      include_role:
+        name: docker
+      when: airgapped_environment
+
+    - name: Flush handlers
+      meta: flush_handlers
+      when: airgapped_environment
   roles:
     - role: common
-    - role: docker
     - role: eksctl
     - role: image
+      vars:
+        local_eksa_os_path: ../eksa-node-images/
+        remote_eksa_os_path: /opt/eks-a/os-images/
+    - role: airgapped
+      when: airgapped_environment
+      vars:
+        downloads_dir: /opt/eks-a/downloads
+        artifacts_tar: '{{ downloads_dir }}/eks-anywhere-artifacts.tar.gz'
+        images_tar: '{{ downloads_dir }}/eks-anywhere-images.tar.gz'
+        registry_url: "{{ hostvars[groups['admin'][0]]['ansible_host'] }}:{{ registry_mirror_port }}"
+        eksa_cli_version: v0.23.1-eks-a-103
     - role: cluster
+    - role: gateway
+      when: not airgapped_environment
+
 

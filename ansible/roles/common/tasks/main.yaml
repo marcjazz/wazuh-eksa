@@ -12,6 +12,7 @@
       - git
       - vim
       - nano
+      - lsof
     state: present
     update_cache: yes
   become: true
