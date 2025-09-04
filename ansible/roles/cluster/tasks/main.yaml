@@ -8,7 +8,7 @@
 
 - name: 'Generate cluster.yaml'
   ansible.builtin.template:
-    src: ../../templates/merged_cluster.yaml.j2
+    src: ../../templates/cluster.yaml.j2
     dest: '{{ work_dir }}/{{ cluster_name }}.yaml'
     mode: '0644'
 

@@ -1,0 +1,19 @@
+---
+- name: Install chrony package
+  ansible.builtin.package:
+    name: "{{ ntp_package }}"
+    state: present
+  become: true
+
+- name: configure chrony servers
+  template:
+    src: chrony.conf.j2
+    dest: /etc/chrony/chrony.conf
+  notify: Restart ntp
+
+- name: Ensure chrony service is started and enabled
+  ansible.builtin.service:
+    name: "{{ ntp_service }}"
+    state: started
+    enabled: true
+  become: true

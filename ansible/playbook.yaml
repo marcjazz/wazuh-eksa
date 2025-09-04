@@ -31,6 +31,7 @@
       when: airgapped_environment
   roles:
     - role: common
+    - role: ntp
     - role: docker
     - role: helm
     - role: eksctl

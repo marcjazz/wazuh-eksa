@@ -59,6 +59,11 @@ spec:
   hardwareSelector:
     type: cp
   osFamily: ubuntu
+  hostOSConfiguration:
+    ntpConfiguration:
+      servers:
+      - "{{ hostvars[groups['admin'][0]]['ansible_host'] }}"
+
 ---
 apiVersion: anywhere.eks.amazonaws.com/v1alpha1
 kind: TinkerbellMachineConfig
@@ -68,3 +73,7 @@ spec:
   hardwareSelector:
     type: worker
   osFamily: ubuntu
+  hostOSConfiguration:
+    ntpConfiguration:
+      servers:
+      - "{{ hostvars[groups['admin'][0]]['ansible_host'] }}"

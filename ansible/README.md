@@ -138,6 +138,19 @@ ansible -i inventory.ini cp:workers -a "ip -o link show" -u ubuntu
 
 ---
 
+## NTP Configuration (chrony)
+
+This setup includes an `ntp` role to ensure time synchronization using `chrony`. By default, it installs and enables the `chrony` service. You can optionally specify a timeserver by setting the `timeserver` variable.
+
+Example `inventory.ini`:
+```ini
+[all:vars]
+ntp_server=pool.ntp.org
+ntp_subnet=172.16.113.0/24
+```
+
+---
+
 ## Optional: Reserve internal IPs on GCP (example)
 
 > *This is optional. It requires `gcloud` and proper IAM permissions.*
