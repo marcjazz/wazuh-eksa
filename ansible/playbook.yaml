@@ -26,16 +26,13 @@
         airgapped_environment: false
       when: airgapped_environment is not defined
 
-    - name: Include docker role for airgapped environments
-      include_role:
-        name: docker
-      when: airgapped_environment
-
     - name: Flush handlers
       meta: flush_handlers
       when: airgapped_environment
   roles:
     - role: common
+    - role: docker
+    - role: helm
     - role: eksctl
     - role: image
     - role: airgapped

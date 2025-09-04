@@ -24,7 +24,7 @@
       ansible.builtin.shell: |
         # Check if server is already running
         if ! lsof -i:{{ image_server_port }} | grep python3; then
-          python3 -m http.server {{ image_server_port }} --directory "{{ remote_eksa_os_path | dirname }}" > /var/log/image-server.log 2>&1 &
+          python3 -m http.server {{ image_server_port }} --directory "{{ remote_eksa_os_path }}" > /var/log/image-server.log 2>&1 &
         fi
       args:
         executable: /bin/bash
