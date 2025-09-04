@@ -16,3 +16,32 @@ eksa_vms:
     # Common variables for all hosts
     ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
     ansible_python_interpreter: /usr/bin/python3
+
+    # EKS Anywhere provider: "tinkerbell" or "vsphere"
+    eks_provider: "tinkerbell"
+
+    # Tinkerbell specific variables
+    # tinkerbell_ip: "YOUR_TINKERBELL_IP"
+
+    # vSphere specific variables
+    vsphere_server: "YOUR_VSPHERE_SERVER"
+    vsphere_username: "YOUR_VSPHERE_USERNAME"
+    vsphere_password: "YOUR_VSPHERE_PASSWORD"
+    vsphere_datacenter: "YOUR_VSPHERE_DATACENTER"
+    vsphere_network: "YOUR_VSPHERE_NETWORK"
+    vsphere_thumbprint: "YOUR_VSPHERE_THUMBPRINT"
+    vsphere_insecure: false
+    vsphere_datastore: "YOUR_VSPHERE_DATASTORE"
+    vsphere_folder: "YOUR_VSPHERE_FOLDER"
+    vsphere_resource_pool: "YOUR_VSPHERE_RESOURCE_POOL"
+    vsphere_template: "YOUR_VSPHERE_TEMPLATE"
+    vsphere_ssh_authorized_key: "YOUR_SSH_PUBLIC_KEY"
+
+    # EKS-A Cluster configuration
+    cluster_name: "my-eksa-cluster"
+    kubernetes_version: "1.23"
+    control_plane_endpoint: "YOUR_CONTROL_PLANE_ENDPOINT_IP"
+
+    # Airgapped environment configuration
+    airgapped_environment: false
+    # registry_mirror_port: 5000

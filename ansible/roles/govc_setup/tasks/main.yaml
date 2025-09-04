@@ -1,0 +1,19 @@
+---
+- name: Install govc
+  become: true
+  ansible.builtin.shell:
+    cmd: >-
+      curl -L -o - "https://github.com/vmware/govmomi/releases/latest/download/govc_$(uname -s)_$(uname -m).tar.gz" |
+      tar -C /usr/local/bin -xvzf - govc
+    creates: /usr/local/bin/govc
+
+- name: Configure govc environment variables
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/environment
+    line: "{{ item }}"
+  with_items:
+    - "GOVC_URL={{ vsphere_server }}"
+    - "GOVC_USERNAME={{ vsphere_username }}"
+    - "GOVC_PASSWORD={{ vsphere_password }}"
+    - "GOVC_INSECURE={{ vsphere_insecure | default(false) | lower }}"

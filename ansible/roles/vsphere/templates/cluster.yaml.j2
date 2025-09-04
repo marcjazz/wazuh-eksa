@@ -1,0 +1,90 @@
+apiVersion: anywhere.eks.amazonaws.com/v1alpha1
+kind: Cluster
+metadata:
+  name: {{ cluster_name }}
+spec:
+{% if airgapped_environment %}
+  registryMirrorConfiguration:
+    endpoint: "{{ hostvars[groups['admin'][0]]['ansible_host'] }}"
+    port: "{{ registry_mirror_port | default("5000") }}"
+    ociNamespaces:
+      - registry: "public.ecr.aws"
+    caCertContent: |
+      {{ ca_cert_content.content | b64decode | indent(6) }}
+    authenticate: true
+{% endif %}
+  clusterNetwork:
+    cniConfig:
+      cilium: {}
+    pods:
+      cidrBlocks:
+      - {{ pod_cidr | default("172.20.0.0/16") }}
+    services:
+      cidrBlocks:
+      - {{ service_cidr | default("10.96.0.0/12") }}
+  controlPlaneConfiguration:
+    count: {{ vsphere_cp_count | default(1) }}
+    endpoint:
+      host: "{{ control_plane_endpoint }}"
+    machineGroupRef:
+      kind: VSphereMachineConfig
+      name: {{ cluster_name }}-cp
+  datacenterRef:
+    kind: VSphereDatacenterConfig
+    name: {{ cluster_name }}
+  kubernetesVersion: "{{ kubernetes_version }}"
+  managementCluster:
+    name: {{ cluster_name }}
+  workerNodeGroupConfigurations:
+  - name: {{ cluster_name }}-worker
+    count: {{ vsphere_worker_count | default(2) }}
+    machineGroupRef:
+      kind: VSphereMachineConfig
+      name: {{ cluster_name }}-worker
+---
+apiVersion: anywhere.eks.amazonaws.com/v1alpha1
+kind: VSphereDatacenterConfig
+metadata:
+  name: {{ cluster_name }}
+spec:
+  datacenter: "{{ vsphere_datacenter }}"
+  network: "{{ vsphere_network }}"
+  server: "{{ vsphere_server }}"
+  insecure: {{ vsphere_insecure | default(false) }}
+  thumbprint: "{{ vsphere_thumbprint }}"
+---
+apiVersion: anywhere.eks.amazonaws.com/v1alpha1
+kind: VSphereMachineConfig
+metadata:
+  name: {{ cluster_name }}-cp
+spec:
+  diskGiB: {{ vsphere_disk_gib | default(25) }}
+  datastore: "{{ vsphere_datastore }}"
+  folder: "{{ vsphere_folder }}"
+  numCPUs: {{ vsphere_cp_num_cpus | default(2) }}
+  memoryMiB: {{ vsphere_cp_memory_mib | default(8192) }}
+  osFamily: "{{ vsphere_os_family | default('ubuntu') }}"
+  resourcePool: "{{ vsphere_resource_pool }}"
+  template: "{{ vsphere_template }}"
+  users:
+  - name: "{{ vsphere_user | default('ec2-user') }}"
+    sshAuthorizedKeys:
+    - "{{ vsphere_ssh_authorized_key }}"
+---
+apiVersion: anywhere.eks.amazonaws.com/v1alpha1
+kind: VSphereMachineConfig
+metadata:
+  name: {{ cluster_name }}-worker
+spec:
+  diskGiB: {{ vsphere_disk_gib | default(25) }}
+  datastore: "{{ vsphere_datastore }}"
+  folder: "{{ vsphere_folder }}"
+  numCPUs: {{ vsphere_worker_num_cpus | default(2) }}
+  memoryMiB: {{ vsphere_worker_memory_mib | default(8192) }}
+  osFamily: "{{ vsphere_os_family | default('ubuntu') }}"
+  resourcePool: "{{ vsphere_resource_pool }}"
+  template: "{{ vsphere_template }}"
+  users:
+  - name: "{{ vsphere_user | default('ec2-user') }}"
+    sshAuthorizedKeys:
+    - "{{ vsphere_ssh_authorized_key }}"

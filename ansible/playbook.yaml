@@ -29,6 +29,11 @@
     - name: Flush handlers
       meta: flush_handlers
       when: airgapped_environment
+
+    - name: Set eks_provider if not defined
+      set_fact:
+        eks_provider: "tinkerbell"
+      when: eks_provider is not defined
   roles:
     - role: common
     - role: ntp
@@ -38,6 +43,11 @@
     - role: image
     - role: airgapped
       when: airgapped_environment
+    - role: govc_setup
+      when: eks_provider == "vsphere"
     - role: cluster
+      when: eks_provider == "tinkerbell"
+    - role: vsphere
+      when: eks_provider == "vsphere"
     - role: gateway
       when: not airgapped_environment

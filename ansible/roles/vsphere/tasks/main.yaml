@@ -1,0 +1,43 @@
+---
+# Tasks for vsphere role
+- name: 'Generate cluster.yaml'
+  ansible.builtin.template:
+    src: cluster.yaml.j2
+    dest: '{{ work_dir }}/{{ cluster_name }}.yaml'
+    mode: '0644'
+
+- name: Find bundle-release.yaml
+  ansible.builtin.find:
+    paths: "{{ work_dir }}"
+    patterns: "bundle-release.yaml"
+    recurse: yes
+  register: found_bundle_file
+  become: true
+  when: airgapped_environment
+
+- name: 'Create EKS-A cluster'
+  become: true
+  ansible.builtin.command:
+    cmd: >-
+      eksctl anywhere create cluster
+      -f {{ cluster_name }}.yaml
+      --bundles-override {{ found_bundle_file.files[0].path }}
+    chdir: "{{ work_dir }}"
+  environment:
+    REGISTRY_USERNAME: "{{ registry_username }}"
+    REGISTRY_PASSWORD: "{{ registry_password }}"
+    EKSA_VSPHERE_USERNAME: "{{ vsphere_username }}"
+    EKSA_VSPHERE_PASSWORD: "{{ vsphere_password }}"
+  run_once: true
+  when: airgapped_environment
+
+- name: 'Create EKS-A cluster (non-airgapped)'
+  become: true
+  ansible.builtin.command:
+    cmd: 'eksctl anywhere create cluster -f {{ cluster_name }}.yaml'
+    chdir: '{{ work_dir }}'
+  environment:
+    EKSA_VSPHERE_USERNAME: "{{ vsphere_username }}"
+    EKSA_VSPHERE_PASSWORD: "{{ vsphere_password }}"
+  run_once: true
+  when: not airgapped_environment
