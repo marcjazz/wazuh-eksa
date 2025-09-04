@@ -1,0 +1,79 @@
+apiVersion: anywhere.eks.amazonaws.com/v1alpha1
+kind: Cluster
+metadata:
+  name: {{ cluster_name }}
+spec:
+{% if airgapped_environment %}
+  registryMirrorConfiguration:
+    endpoint: "{{ hostvars[groups['admin'][0]]['ansible_host'] }}"
+    port: "{{ registry_mirror_port | default("5000") }}"
+    ociNamespaces:
+      - registry: "public.ecr.aws"
+    caCertContent: |
+      {{ ca_cert_content.content | b64decode | indent(6) }}
+    authenticate: true
+{% endif %}
+  clusterNetwork:
+    cniConfig:
+      cilium: {}
+    pods:
+      cidrBlocks:
+      - {{ pod_cidr | default("172.20.0.0/16") }}
+    services:
+      cidrBlocks:
+      - {{ service_cidr | default("10.96.0.0/12") }}
+  controlPlaneConfiguration:
+    count: 1
+    endpoint:
+      host: "{{ control_plane_endpoint }}"
+    machineGroupRef:
+      kind: TinkerbellMachineConfig
+      name: {{ cluster_name }}-cp
+  datacenterRef:
+    kind: TinkerbellDatacenterConfig
+    name: {{ cluster_name }}
+  kubernetesVersion: "{{ kubernetes_version }}"
+  managementCluster:
+    name: {{ cluster_name }}
+  workerNodeGroupConfigurations:
+  - name: {{ cluster_name }}-worker
+    count: 2
+    machineGroupRef:
+      kind: TinkerbellMachineConfig
+      name: {{ cluster_name }}-worker
+---
+apiVersion: anywhere.eks.amazonaws.com/v1alpha1
+kind: TinkerbellDatacenterConfig
+metadata:
+  name: {{ cluster_name }}
+spec:
+  tinkerbellIP: "{{ tinkerbell_ip }}"
+  osImageURL: "http://{{ hostvars[groups['admin'][0]]['ansible_host'] }}:{{ image_server_port }}/ubuntu-2204-kube-1-33.gz"
+  hookImagesURLPath: "http://{{ hostvars[groups['admin'][0]]['ansible_host'] }}:{{ image_server_port }}/hook"
+---
+apiVersion: anywhere.eks.amazonaws.com/v1alpha1
+kind: TinkerbellMachineConfig
+metadata:
+  name: {{ cluster_name }}-cp
+spec:
+  hardwareSelector:
+    type: cp
+  osFamily: ubuntu
+  hostOSConfiguration:
+    ntpConfiguration:
+      servers:
+      - "{{ hostvars[groups['admin'][0]]['ansible_host'] }}"
+
+---
+apiVersion: anywhere.eks.amazonaws.com/v1alpha1
+kind: TinkerbellMachineConfig
+metadata:
+  name: {{ cluster_name }}-worker
+spec:
+  hardwareSelector:
+    type: worker
+  osFamily: ubuntu
+  hostOSConfiguration:
+    ntpConfiguration:
+      servers:
+      - "{{ hostvars[groups['admin'][0]]['ansible_host'] }}"

@@ -1,0 +1,4 @@
+hostname,mac,ip_address,netmask,gateway,nameservers,labels,disk
+{% for host in groups['nodes'] %}
+{{ host }},{{ hostvars[host].mac_addr }},{{ hostvars[host].ip_address }},{{ netmask }},{{ gateway }},{{ nameservers }},type={{ hostvars[host].role }},{{ disk }}
+{% endfor %}

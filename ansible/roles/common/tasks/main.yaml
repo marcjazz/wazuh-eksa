@@ -1,10 +1,75 @@
 ---
-- name: Install prerequisites for Docker repository
+- name: Install common required packages
   ansible.builtin.apt:
     name:
-      - apt-transport-https
-      - ca-certificates
-      - curl
-      - gnupg
+      - jq
+      - make
+      - python3-pip
+      - unzip
+      - bc
+      - rsync
+      - zsh
+      - git
+      - vim
+      - nano
+      - lsof
     state: present
-    update_cache: true
+    update_cache: yes
+  become: true
+
+- name: Download & Install yq binary
+  ansible.builtin.get_url:
+    url: https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64
+    dest: /usr/bin/yq
+    mode: '0755'
+  become: true
+
+- name: Adjust SSH config to allow ssh-rsa
+  ansible.builtin.blockinfile:
+    path: '/home/{{ ansible_user }}/.ssh/config'
+    create: yes
+    owner: '{{ ansible_user }}'
+    group: '{{ ansible_user }}'
+    mode: '0600'
+    block: |
+      HostKeyAlgorithms +ssh-rsa
+      PubkeyAcceptedKeyTypes +ssh-rsa
+
+- name: Set zsh as default shell for {{ ansible_user }}
+  ansible.builtin.user:
+    name: '{{ ansible_user }}'
+    shell: /usr/bin/zsh
+  become: true
+
+- name: Install oh-my-zsh for {{ ansible_user }}
+  ansible.builtin.shell: 'sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended'
+  args:
+    creates: '/home/{{ ansible_user }}/.oh-my-zsh'
+  become: true
+  become_user: '{{ ansible_user }}'
+
+- name: Create a directory for k9s if it does not exist
+  ansible.builtin.file:
+    path: /home/user/k9s
+    state: directory
+    mode: '0755'
+
+- name: Download and unarchive k9s
+  ansible.builtin.unarchive:
+    src: https://github.com/derailed/k9s/releases/download/v0.32.4/k9s_Linux_amd64.tar.gz
+    dest: /home/user/k9s
+    remote_src: yes
+    creates: /home/user/k9s/k9s
+
+- name: Move k9s to /usr/local/bin
+  ansible.builtin.copy:
+    src: /home/user/k9s/k9s
+    dest: /usr/local/bin/k9s
+    remote_src: yes
+    mode: '0755'
+  become: true
+
+- name: Clean up k9s directory
+  ansible.builtin.file:
+    path: /home/user/k9s
+    state: absent

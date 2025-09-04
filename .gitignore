@@ -39,6 +39,7 @@ id_rsa*
 eksa-cli-logs
 *.log
 logs/
+eksa-node-images
 
 # Backup files
 *.bak

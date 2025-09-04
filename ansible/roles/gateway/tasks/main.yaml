@@ -1,0 +1,30 @@
+---
+- name: Enable IP forwarding
+  ansible.builtin.lineinfile:
+    path: /etc/sysctl.conf
+    regexp: '^#net.ipv4.ip_forward=1'
+    line: net.ipv4.ip_forward=1
+    backrefs: yes
+  become: true
+  notify:
+    - Apply sysctl changes
+
+- name: Flush handlers to apply sysctl changes immediately
+  meta: flush_handlers
+
+- name: Install iptables-persistent
+  ansible.builtin.apt:
+    name: iptables-persistent
+    state: present
+  become: true
+
+- name: Configure NAT for internet access
+  ansible.builtin.iptables:
+    table: nat
+    chain: POSTROUTING
+    out_interface: '{{ ansible_default_ipv4.interface }}'
+    source: '{{ ansible_default_ipv4.network }}/{{ ansible_default_ipv4.netmask }}'
+    jump: MASQUERADE
+  become: true
+  notify:
+    - Save iptables rules
